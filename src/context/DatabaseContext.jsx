@@ -1,19 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  initializeDatabase,
-  createUser,
-  getUserByUsername,
-  updateUserLogin,
-  saveGameProgress,
-  loadGameProgress,
-  getAllUserProgress,
-  saveChatMessage,
-  getChatHistory,
-  deleteChatHistory,
-  saveCharacterMemory,
-  getCharacterMemories,
-  cleanupOldData
-} from '../database/db.js';
+
+// API base URL - will use server endpoints instead of direct database access
+const API_BASE = window.location.origin;
 
 const DatabaseContext = createContext();
 
@@ -36,23 +24,25 @@ export const DatabaseProvider = ({ children }) => {
     const init = async () => {
       try {
         setIsLoading(true);
-        await initializeDatabase();
+        // Initialize database through API
+        await fetch(`${API_BASE}/api/init`, { method: 'POST' });
         setIsInitialized(true);
         
         // Check for saved user in localStorage
         const savedUsername = localStorage.getItem('rickmorty_username');
         if (savedUsername) {
-          const user = await getUserByUsername(savedUsername);
-          if (user) {
+          const response = await fetch(`${API_BASE}/api/users/${savedUsername}`);
+          if (response.ok) {
+            const user = await response.json();
             setCurrentUser(user);
-            await updateUserLogin(user.id);
+            await fetch(`${API_BASE}/api/users/${user.id}/login`, { method: 'POST' });
           } else {
             localStorage.removeItem('rickmorty_username');
           }
         }
-      } catch (error) {
-        console.error('Database initialization failed:', error);
-        setError('Failed to connect to database. Some features may not work.');
+      } catch (err) {
+        console.error('Database initialization failed:', err);
+        setError('Failed to initialize database');
       } finally {
         setIsLoading(false);
       }
@@ -61,213 +51,199 @@ export const DatabaseProvider = ({ children }) => {
     init();
   }, []);
 
-  // User management
-  const loginUser = async (username, email = null) => {
+  const login = async (username) => {
     try {
       setIsLoading(true);
       setError(null);
       
-      let user = await getUserByUsername(username);
+      // Try to get existing user
+      let response = await fetch(`${API_BASE}/api/users/${username}`);
+      let user;
       
-      if (!user) {
+      if (!response.ok) {
         // Create new user if doesn't exist
-        user = await createUser(username, email);
-      } else {
-        // Update last login
-        await updateUserLogin(user.id);
+        response = await fetch(`${API_BASE}/api/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
       }
       
-      setCurrentUser(user);
-      localStorage.setItem('rickmorty_username', username);
+      if (response.ok) {
+        user = await response.json();
+        await fetch(`${API_BASE}/api/users/${user.id}/login`, { method: 'POST' });
+        setCurrentUser(user);
+        localStorage.setItem('rickmorty_username', username);
+        return { success: true, user };
+      }
       
-      return user;
-    } catch (error) {
-      setError(error.message);
-      throw error;
+      return { success: false, error: 'Failed to create or retrieve user' };
+    } catch (err) {
+      console.error('Login failed:', err);
+      setError('Login failed. Please try again.');
+      return { success: false, error: err.message };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logoutUser = () => {
+  const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('rickmorty_username');
   };
 
-  // Game progress management
-  const saveProgress = async (character, progressData) => {
-    if (!currentUser) {
-      throw new Error('No user logged in');
-    }
+  const saveProgress = async (character, progress) => {
+    if (!currentUser) return;
     
     try {
-      const savedProgress = await saveGameProgress(currentUser.id, character, progressData);
-      return savedProgress;
-    } catch (error) {
+      const response = await fetch(`${API_BASE}/api/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          character,
+          progress
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save progress');
+      }
+    } catch (err) {
+      console.error('Failed to save progress:', err);
       setError('Failed to save progress');
-      throw error;
     }
   };
 
   const loadProgress = async (character) => {
-    if (!currentUser) {
-      return null;
-    }
+    if (!currentUser) return null;
     
     try {
-      const progress = await loadGameProgress(currentUser.id, character);
-      return progress;
-    } catch (error) {
-      console.error('Failed to load progress:', error);
+      const response = await fetch(`${API_BASE}/api/progress/${currentUser.id}/${character}`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (err) {
+      console.error('Failed to load progress:', err);
       return null;
     }
   };
 
   const getAllProgress = async () => {
-    if (!currentUser) {
-      return [];
-    }
+    if (!currentUser) return [];
     
     try {
-      const allProgress = await getAllUserProgress(currentUser.id);
-      return allProgress;
-    } catch (error) {
-      console.error('Failed to load all progress:', error);
+      const response = await fetch(`${API_BASE}/api/progress/${currentUser.id}`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return [];
+    } catch (err) {
+      console.error('Failed to load all progress:', err);
       return [];
     }
   };
 
-  // Chat history management
-  const saveChatToHistory = async (character, userInput, characterResponse, emotion) => {
-    if (!currentUser) {
-      return null;
-    }
+  const saveChatToHistory = async (character, message, isUser = false) => {
+    if (!currentUser) return;
     
     try {
-      const chatEntry = await saveChatMessage(
-        currentUser.id,
-        character,
-        userInput,
-        characterResponse,
-        emotion
-      );
-      return chatEntry;
-    } catch (error) {
-      console.error('Failed to save chat:', error);
-      return null;
+      await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          character,
+          message,
+          isUser
+        })
+      });
+    } catch (err) {
+      console.error('Failed to save chat message:', err);
     }
   };
 
-  const loadChatHistory = async (character, limit = 50) => {
-    if (!currentUser) {
-      return [];
-    }
+  const loadChatHistory = async (character) => {
+    if (!currentUser) return [];
     
     try {
-      const history = await getChatHistory(currentUser.id, character, limit);
-      return history;
-    } catch (error) {
-      console.error('Failed to load chat history:', error);
+      const response = await fetch(`${API_BASE}/api/chat/${currentUser.id}/${character}`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return [];
+    } catch (err) {
+      console.error('Failed to load chat history:', err);
       return [];
     }
   };
 
   const clearChatHistory = async (character) => {
-    if (!currentUser) {
-      return;
-    }
+    if (!currentUser) return;
     
     try {
-      await deleteChatHistory(currentUser.id, character);
-    } catch (error) {
-      console.error('Failed to clear chat history:', error);
-      throw error;
+      await fetch(`${API_BASE}/api/chat/${currentUser.id}/${character}`, {
+        method: 'DELETE'
+      });
+    } catch (err) {
+      console.error('Failed to clear chat history:', err);
     }
   };
 
-  // Character memory management
-  const saveMemory = async (character, memoryType, memoryContent, importanceScore = 1) => {
-    if (!currentUser) {
-      return null;
-    }
+  const saveMemory = async (character, memory) => {
+    if (!currentUser) return;
     
     try {
-      const memory = await saveCharacterMemory(
-        currentUser.id,
-        character,
-        memoryType,
-        memoryContent,
-        importanceScore
-      );
-      return memory;
-    } catch (error) {
-      console.error('Failed to save memory:', error);
-      return null;
+      await fetch(`${API_BASE}/api/memory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          character,
+          memory
+        })
+      });
+    } catch (err) {
+      console.error('Failed to save memory:', err);
     }
   };
 
-  const loadMemories = async (character, limit = 20) => {
-    if (!currentUser) {
-      return [];
-    }
+  const loadMemories = async (character) => {
+    if (!currentUser) return [];
     
     try {
-      const memories = await getCharacterMemories(currentUser.id, character, limit);
-      return memories;
-    } catch (error) {
-      console.error('Failed to load memories:', error);
-      return [];
-    }
-  };
-
-  // Auto-save functionality
-  const autoSave = async (character, gameState) => {
-    if (!currentUser || !character) {
-      return;
-    }
-
-    try {
-      const progressData = {
-        affectionLevel: gameState.affectionLevel || 0,
-        currentEmotion: gameState.currentEmotion || 'neutral',
-        nsfwEnabled: gameState.nsfwEnabled || false,
-        totalInteractions: gameState.totalInteractions || 0
-      };
-
-      await saveProgress(character, progressData);
-    } catch (error) {
-      console.error('Auto-save failed:', error);
-    }
-  };
-
-  // Cleanup old data periodically
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    const cleanup = async () => {
-      try {
-        await cleanupOldData(30); // Keep 30 days of data
-      } catch (error) {
-        console.error('Cleanup failed:', error);
+      const response = await fetch(`${API_BASE}/api/memory/${currentUser.id}/${character}`);
+      if (response.ok) {
+        return await response.json();
       }
-    };
+      return [];
+    } catch (err) {
+      console.error('Failed to load memories:', err);
+      return [];
+    }
+  };
 
-    // Run cleanup once per day
-    const interval = setInterval(cleanup, 24 * 60 * 60 * 1000);
+  const autoSave = async (character, gameState) => {
+    if (!currentUser || !gameState) return;
     
-    return () => clearInterval(interval);
-  }, [isInitialized]);
+    try {
+      await saveProgress(character, gameState);
+    } catch (err) {
+      console.error('Auto-save failed:', err);
+    }
+  };
 
   const value = {
-    // User state
+    // State
     currentUser,
     isLoading,
     error,
     isInitialized,
     
     // User management
-    loginUser,
-    logoutUser,
+    login,
+    logout,
     
     // Game progress
     saveProgress,
@@ -282,10 +258,7 @@ export const DatabaseProvider = ({ children }) => {
     
     // Character memories
     saveMemory,
-    loadMemories,
-    
-    // Utility
-    clearError: () => setError(null)
+    loadMemories
   };
 
   return (
