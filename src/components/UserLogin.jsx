@@ -5,7 +5,7 @@ const UserLogin = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [showEmailField, setShowEmailField] = useState(false);
-  const { loginUser, isLoading, error } = useDatabase();
+  const { login, isLoading, error } = useDatabase();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,7 +15,7 @@ const UserLogin = ({ onLoginSuccess }) => {
     }
 
     try {
-      await loginUser(username.trim(), email.trim() || null);
+      await login(username.trim(), email.trim() || null);
       if (onLoginSuccess) {
         onLoginSuccess();
       }
