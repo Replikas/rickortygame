@@ -422,7 +422,7 @@ const GameScreen = () => {
     }
 
     // Add user message to history
-    addToHistory(userMessage)
+    addToHistory(input.trim(), null, null)
     setInput('')
     setIsTyping(true)
 
@@ -444,8 +444,7 @@ const GameScreen = () => {
         }
 
         // Add AI message to history
-        addToHistory(aiMessage)
-        
+        addToHistory(null, response, currentEmotion)
         // Update affection based on interaction
         updateAffection(5)
       }
