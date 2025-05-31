@@ -139,7 +139,7 @@ export const GeminiProvider = ({ children }) => {
       // Add response guidelines
       contextPrompt += `\n\nGuidelines:
 - Stay in character at all times
-- Keep responses under 150 words
+- Keep responses under 75 words
 - Be reactive to the user's input
 - Show emotional changes through your dialogue
 - Include action descriptions in *asterisks* when appropriate

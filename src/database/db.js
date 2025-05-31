@@ -27,9 +27,9 @@ export const initializeDatabase = async () => {
       CREATE TABLE IF NOT EXISTS game_progress (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        character VARCHAR(20) NOT NULL,
+        character VARCHAR(50) NOT NULL,
         affection_level INTEGER DEFAULT 0,
-        current_emotion VARCHAR(20) DEFAULT 'neutral',
+        current_emotion VARCHAR(50) DEFAULT 'neutral',
         nsfw_enabled BOOLEAN DEFAULT false,
         total_interactions INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -43,10 +43,10 @@ export const initializeDatabase = async () => {
       CREATE TABLE IF NOT EXISTS chat_history (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        character VARCHAR(20) NOT NULL,
+        character VARCHAR(50) NOT NULL,
         user_input TEXT NOT NULL,
         character_response TEXT NOT NULL,
-        emotion VARCHAR(20) DEFAULT 'neutral',
+        emotion VARCHAR(50) DEFAULT 'neutral',
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -56,7 +56,7 @@ export const initializeDatabase = async () => {
       CREATE TABLE IF NOT EXISTS character_memories (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        character VARCHAR(20) NOT NULL,
+        character VARCHAR(50) NOT NULL,
         memory_type VARCHAR(50) NOT NULL,
         memory_content TEXT NOT NULL,
         importance_score INTEGER DEFAULT 1,

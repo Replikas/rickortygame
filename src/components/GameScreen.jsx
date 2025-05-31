@@ -379,10 +379,11 @@ const GameScreen = () => {
   }
 
   const formatMessage = (content) => {
-    return content.split('\n').map((line, index) => (
+    const safeContent = typeof content === 'string' ? content : ''
+    return safeContent.split('\n').map((line, index) => (
       <span key={index}>
         {line}
-        {index < content.split('\n').length - 1 && <br />}
+        {index < safeContent.split('\n').length - 1 && <br />}
       </span>
     ))
   }
@@ -440,10 +441,14 @@ const GameScreen = () => {
       })
 
       // Generate AI response
+      const formattedHistory = conversationHistory.map(entry => ({ userInput: entry.userInput, response: entry.response }))
+      formattedHistory.push({ userInput: input.trim(), response: null })
       const response = await generateResponse(
-        selectedCharacter,
-        [...conversationHistory, userMessage],
-        nsfwEnabled
+        selectedCharacter.id,
+        input.trim(),           // userInput should be the actual user input
+        formattedHistory,       // conversationHistory should be the formatted history
+        currentEmotion,         // emotion
+        nsfwEnabled            // nsfwEnabled
       )
 
       if (response) {
