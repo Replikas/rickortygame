@@ -112,6 +112,10 @@ app.post('/api/chat', async (req, res) => {
     if (typeof character !== 'string' || character.length > 50) {
       return res.status(400).json({ error: 'Character ID too long or invalid.' });
     }
+    // Prevent guests from saving chat messages
+    if (!userId) {
+      return res.status(403).json({ error: 'Guests are not allowed to save chat messages.' });
+    }
     const result = await saveChatMessage(userId, character, message, '', 'neutral');
     res.json(result);
   } catch (error) {
