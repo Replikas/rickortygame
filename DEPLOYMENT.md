@@ -16,18 +16,21 @@ This project is configured for easy deployment to Render.com using the included 
    - Connect your GitHub repository: `Replikas/rickortygame`
    - Render will automatically detect the `render.yaml` configuration
 
-3. **Configure API Keys**
-   - Before deployment, you MUST configure your Gemini API keys
-   - Edit `src/contexts/GeminiContext.jsx`
-   - Update the `serverApiKeys` array with your actual API keys:
+3. **Configure API Keys (Environment Variables)**
+   - API keys are now managed through Render's environment variables (secure!)
+   - In Render dashboard, go to your service → Environment
+   - Add the following environment variables:
    
-   ```javascript
-   const serverApiKeys = [
-     'your-actual-gemini-api-key-1',
-     'your-actual-gemini-api-key-2', // Optional: for rate limit protection
-     // Add more keys as needed
-   ];
    ```
+   VITE_GEMINI_API_KEY_1=your-first-api-key-here
+   VITE_GEMINI_API_KEY_2=your-second-api-key-here (optional)
+   VITE_GEMINI_API_KEY_3=your-third-api-key-here (optional)
+   VITE_GEMINI_API_KEY_4=your-fourth-api-key-here (optional)
+   VITE_GEMINI_API_KEY_5=your-fifth-api-key-here (optional)
+   ```
+   
+   - You only need at least one key (VITE_GEMINI_API_KEY_1)
+   - Additional keys provide automatic rotation for rate limit protection
 
 4. **Get Gemini API Keys**
    - Visit [Google AI Studio](https://ai.google.dev/)
@@ -41,9 +44,10 @@ This project is configured for easy deployment to Render.com using the included 
 
 ### Important Notes:
 
-- **API Keys**: Make sure to add your actual Gemini API keys before deployment
+- **API Keys**: Add your Gemini API keys as environment variables in Render (never commit keys to GitHub!)
+- **Security**: API keys are stored securely in Render's environment variables, not in your code
 - **Rate Limits**: Multiple API keys provide automatic rotation when limits are hit
-- **Security**: API keys are managed server-side, not exposed to end users
+- **Environment Variables**: Keys are loaded from VITE_GEMINI_API_KEY_1, VITE_GEMINI_API_KEY_2, etc.
 - **Free Tier**: This configuration uses Render's free tier
 
 ### Project Features:

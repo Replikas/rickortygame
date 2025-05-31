@@ -8,3 +8,13 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: VITE_GEMINI_API_KEY_1
+        sync: false
+      - key: VITE_GEMINI_API_KEY_2
+        sync: false
+      - key: VITE_GEMINI_API_KEY_3
+        sync: false
+      - key: VITE_GEMINI_API_KEY_4
+        sync: false
+      - key: VITE_GEMINI_API_KEY_5
+        sync: false

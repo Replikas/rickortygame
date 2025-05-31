@@ -12,13 +12,23 @@ export const useGemini = () => {
 }
 
 export const GeminiProvider = ({ children }) => {
-  // Server-managed API keys - you configure these
-  const [serverApiKeys] = useState([
-    // Add your API keys here - managed by you, not users
-    // Example: 'your-api-key-1',
-    // Example: 'your-api-key-2',
-    // Example: 'your-api-key-3',
-  ])
+  // Server-managed API keys from environment variables
+  const [serverApiKeys] = useState(() => {
+    const keys = []
+    // Check for multiple API keys in environment variables
+    if (import.meta.env.VITE_GEMINI_API_KEY_1) keys.push(import.meta.env.VITE_GEMINI_API_KEY_1)
+    if (import.meta.env.VITE_GEMINI_API_KEY_2) keys.push(import.meta.env.VITE_GEMINI_API_KEY_2)
+    if (import.meta.env.VITE_GEMINI_API_KEY_3) keys.push(import.meta.env.VITE_GEMINI_API_KEY_3)
+    if (import.meta.env.VITE_GEMINI_API_KEY_4) keys.push(import.meta.env.VITE_GEMINI_API_KEY_4)
+    if (import.meta.env.VITE_GEMINI_API_KEY_5) keys.push(import.meta.env.VITE_GEMINI_API_KEY_5)
+    
+    // Fallback to single key if available
+    if (keys.length === 0 && import.meta.env.VITE_GEMINI_API_KEY) {
+      keys.push(import.meta.env.VITE_GEMINI_API_KEY)
+    }
+    
+    return keys
+  })
   const [currentKeyIndex, setCurrentKeyIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
