@@ -108,6 +108,10 @@ app.get('/api/progress/:userId', async (req, res) => {
 app.post('/api/chat', async (req, res) => {
   try {
     const { userId, character, message, isUser } = req.body;
+    // Backend validation for character length
+    if (typeof character !== 'string' || character.length > 50) {
+      return res.status(400).json({ error: 'Character ID too long or invalid.' });
+    }
     const result = await saveChatMessage(userId, character, message, '', 'neutral');
     res.json(result);
   } catch (error) {
