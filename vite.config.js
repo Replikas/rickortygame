@@ -10,5 +10,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true
+  },
+  define: {
+    global: 'globalThis'
+  },
+  optimizeDeps: {
+    exclude: ['pg']
+  },
+  ssr: {
+    noExternal: ['pg']
   }
 })

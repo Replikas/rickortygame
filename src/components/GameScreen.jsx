@@ -1,23 +1,62 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Send, Heart, Zap, Brain, Atom, MessageCircle, User } from 'lucide-react'
+import { 
+  ArrowLeft, 
+  Send, 
+  Heart, 
+  Settings, 
+  User, 
+  LogOut,
+  Zap,
+  MessageCircle,
+  Atom,
+  Brain
+} from 'lucide-react'
+import { useGame } from '../context/GameContext'
+import { useDatabase } from '../context/DatabaseContext'
 import { useGemini } from '../context/GeminiContext'
+import CharacterSelect from './CharacterSelect'
+import SettingsPanel from './Settings'
 
-// Import character profile images
-import mortyImg from '../assets/sprites/morty/morty.jpg'
+// Character images
 import rickImg from '../assets/sprites/rick/rick.jpg'
+import mortyImg from '../assets/sprites/morty/morty.jpg'
 import rickPrimeImg from '../assets/sprites/rick_prime/RICKPRIME.webp'
 import evilMortyImg from '../assets/sprites/evil_morty/evil-morty.png'
 
-function GameScreen({ character, onBack }) {
-  const [messages, setMessages] = useState([])
-  const [inputMessage, setInputMessage] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [affectionLevel, setAffectionLevel] = useState(0)
-  const [currentEmotion, setCurrentEmotion] = useState('neutral')
-  const [conversationCount, setConversationCount] = useState(0)
-  const messagesEndRef = useRef(null)
+const GameScreen = () => {
+  // Game context
+  const {
+    selectedCharacter,
+    currentScreen,
+    affectionLevel,
+    currentEmotion,
+    conversationHistory,
+    conversationCount,
+    nsfwEnabled,
+    isLoading,
+    selectCharacter,
+    goToMenu,
+    goToCharacterSelect,
+    goToSettings,
+    addToHistory,
+    updateAffection,
+    toggleNSFW
+  } = useGame()
+
+  // Database context
+  const {
+    currentUser,
+    logoutUser
+  } = useDatabase()
+
+  // Gemini context
   const { generateResponse } = useGemini()
+
+  // Local state
+  const [input, setInput] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -25,19 +64,309 @@ function GameScreen({ character, onBack }) {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [conversationHistory])
 
-  useEffect(() => {
-    // Initialize conversation with character
-    const initMessage = {
-      id: Date.now(),
-      sender: 'character',
-      content: getInitialMessage(character),
-      timestamp: new Date(),
-      emotion: 'neutral'
+  // Screen rendering logic
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 'character-select':
+        return (
+          <CharacterSelect 
+            onCharacterSelect={selectCharacter}
+            onBack={goToMenu}
+          />
+        )
+      case 'game':
+        return renderGameInterface()
+      case 'settings':
+        return (
+          <SettingsPanel 
+            onBack={goToMenu}
+          />
+        )
+      default:
+        return renderMainMenu()
     }
-    setMessages([initMessage])
-  }, [character])
+  }
+
+  const renderMainMenu = () => {
+    return (
+      <motion.div 
+        className="min-h-screen flex items-center justify-center portal-gradient portal-orbs"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+      >
+        <div className="text-center max-w-2xl mx-auto px-6">
+          {/* Header with user info */}
+          <div className="absolute top-4 right-4 flex items-center space-x-4">
+            {currentUser ? (
+              <div className="flex items-center space-x-2 bg-black/50 rounded-lg px-3 py-2">
+                <User size={16} className="text-green-400" />
+                <span className="text-white text-sm">{currentUser.username}</span>
+                <button
+                  onClick={logoutUser}
+                  className="text-red-400 hover:text-red-300"
+                  title="Logout"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+            ) : (
+              <div className="bg-black/50 rounded-lg px-3 py-2">
+                <span className="text-gray-400 text-sm">Guest Mode</span>
+              </div>
+            )}
+          </div>
+
+          {/* Portal Logo */}
+          <motion.div 
+            className="relative mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="portal-glow mx-auto w-32 h-32 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center mb-6">
+              <Zap size={64} className="portal-text floating-portal" />
+            </div>
+            <h1 className="text-6xl font-bold portal-shadow-lg mb-4">
+              <span className="rick-green">RICK</span>
+              <span className="text-gray-400"> & </span>
+              <span className="morty-yellow">MORTY</span>
+            </h1>
+            <h2 className="text-2xl portal-accent font-semibold">
+              Interdimensional Dating Simulator
+            </h2>
+          </motion.div>
+
+          {/* Menu Buttons */}
+          <motion.div 
+            className="space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <motion.button
+              className="portal-button w-full max-w-md mx-auto block"
+              onClick={goToCharacterSelect}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Zap className="inline mr-2" size={20} />
+              Start Adventure
+            </motion.button>
+
+            <motion.button
+              className="portal-button w-full max-w-md mx-auto block bg-gradient-to-r from-gray-700 to-gray-600 text-portal-text"
+              onClick={goToSettings}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Settings className="inline mr-2" size={20} />
+              Settings
+            </motion.button>
+          </motion.div>
+
+          {/* Portal Effects */}
+          <motion.div 
+            className="mt-12 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <p className="portal-accent text-sm">
+              "Wubba lubba dub dub! Time to get schwifty with some interdimensional romance!"
+            </p>
+            <div className="flex justify-center space-x-4 mt-4">
+              <Heart className="portal-text" size={16} />
+              <Zap className="morty-yellow" size={16} />
+              <Settings className="portal-blue" size={16} />
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+    )
+  }
+
+  const renderGameInterface = () => {
+    if (!selectedCharacter) return null
+
+    return (
+      <motion.div 
+        className="min-h-screen portal-gradient portal-orbs flex flex-col"
+        initial={{ opacity: 0, x: 100 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -100 }}
+      >
+        {/* Header */}
+        <div className="bg-black/50 backdrop-blur-sm border-b border-portal-blue/30 p-4">
+          <div className="flex items-center justify-between max-w-6xl mx-auto">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={goToMenu}
+                className="portal-button-small"
+              >
+                <ArrowLeft size={16} />
+                Menu
+              </button>
+              <div className="flex items-center space-x-2">
+                <img 
+                  src={getCharacterImage(selectedCharacter.id)} 
+                  alt={selectedCharacter.name}
+                  className="w-8 h-8 rounded-full"
+                />
+                <span className="text-white font-semibold">{selectedCharacter.name}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {/* Affection Level */}
+              <div className="flex items-center space-x-2">
+                <Heart 
+                  size={16} 
+                  className={`${affectionLevel >= 20 ? 'text-red-500' : 'text-gray-400'}`}
+                  fill={affectionLevel >= 20 ? 'currentColor' : 'none'}
+                />
+                <span className="text-white text-sm">{affectionLevel}%</span>
+              </div>
+              
+              {/* NSFW Toggle */}
+              <button
+                onClick={toggleNSFW}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                  nsfwEnabled 
+                    ? 'bg-red-600 text-white' 
+                    : 'bg-gray-600 text-gray-300'
+                }`}
+              >
+                {nsfwEnabled ? '18+' : 'SFW'}
+              </button>
+              
+              {/* Settings */}
+              <button
+                onClick={goToSettings}
+                className="portal-button-small"
+              >
+                <Settings size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Chat Area */}
+        <div className="flex-1 flex max-w-6xl mx-auto w-full">
+          {/* Character Display */}
+          <div className="w-1/3 p-6 flex flex-col items-center justify-center">
+            <motion.div 
+              className="relative"
+              animate={{ 
+                scale: currentEmotion === 'excited' ? 1.05 : 1,
+                rotate: currentEmotion === 'confused' ? [-1, 1, -1, 0] : 0
+              }}
+              transition={{ duration: 0.5 }}
+            >
+              <img 
+                src={getCharacterImage(selectedCharacter.id)} 
+                alt={selectedCharacter.name}
+                className="w-64 h-64 object-cover rounded-lg portal-glow"
+              />
+              
+              {/* Emotion Indicator */}
+              <div className={`absolute top-2 right-2 w-4 h-4 rounded-full ${getEmotionColor(currentEmotion)}`}>
+                {getEmotionIcon(currentEmotion)}
+              </div>
+            </motion.div>
+            
+            {/* Character Stats */}
+            <div className="mt-6 text-center">
+              <h3 className="text-xl font-bold text-white mb-2">{selectedCharacter.name}</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-400">Affection:</span>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-red-500 to-pink-500 transition-all duration-500"
+                        style={{ width: `${affectionLevel}%` }}
+                      />
+                    </div>
+                    <span className="text-white">{affectionLevel}%</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-400">Conversations:</span>
+                  <span className="text-white">{conversationCount}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 flex flex-col p-6">
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4 max-h-96">
+              {conversationHistory.map((message, index) => (
+                <motion.div
+                  key={message.id || index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    message.sender === 'user'
+                      ? 'bg-portal-blue text-white'
+                      : 'bg-gray-800 text-portal-text border border-portal-blue/30'
+                  }`}>
+                    <div className="text-sm">
+                      {formatMessage(message.content)}
+                    </div>
+                    <div className="text-xs opacity-70 mt-1">
+                      {new Date(message.timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className="bg-gray-800 text-portal-text border border-portal-blue/30 px-4 py-2 rounded-lg">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-portal-blue rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-portal-blue rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-2 h-2 bg-portal-blue rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !isTyping && handleSendMessage()}
+                placeholder={`Message ${selectedCharacter?.name}...`}
+                className="flex-1 bg-gray-800 border border-portal-blue/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-portal-blue"
+                disabled={isTyping}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!input.trim() || isTyping}
+                className="portal-button px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
 
   const getCharacterImage = (characterId) => {
     const images = {
@@ -49,359 +378,104 @@ function GameScreen({ character, onBack }) {
     return images[characterId] || rickImg
   }
 
-  const formatMessage = (text) => {
-    // Convert *text* to italics
-    const parts = text.split(/\*(.*?)\*/);
-    return parts.map((part, index) => {
-      if (index % 2 === 1) {
-        return <em key={index} className="italic">{part}</em>;
-      }
-      return part;
-    });
-  };
-
-  const getInitialMessage = (char) => {
-    const greetings = {
-      rick: "*burp* Oh great, another dimension where I have to deal with... this. Look, I don't know what you're expecting here, but I'm Rick Sanchez - the smartest man in the universe. So either impress me or get out of my lab.",
-      morty: "Oh geez, h-hi there! I'm Morty, and uh... *nervous laugh* I'm not really sure how this whole dating thing works. I mean, I've seen some pretty crazy stuff with Rick, but this is... this is different, you know?",
-      rickprime: "*cold stare* So you're the one who thinks they can handle the original Rick. I've destroyed countless realities and killed infinite versions of myself. What makes you think you're special?",
-      evilmorty: "*adjusts eyepatch* Interesting. Another person who thinks they understand me. I've manipulated entire civilizations and broken free from the Central Finite Curve. But sure, let's see what you have to offer."
-    }
-    return greetings[char.id] || "Hello there! Ready for an interdimensional adventure?"
+  const formatMessage = (content) => {
+    return content.split('\n').map((line, index) => (
+      <span key={index}>
+        {line}
+        {index < content.split('\n').length - 1 && <br />}
+      </span>
+    ))
   }
 
   const getEmotionColor = (emotion) => {
     const colors = {
-      happy: '#00ff41',
-      sad: '#4ecdc4',
-      angry: '#ff6b9d',
-      excited: '#ffd700',
-      neutral: '#ffffff',
-      confused: '#a855f7',
-      flirty: '#ff6b9d'
+      happy: 'bg-yellow-400',
+      sad: 'bg-blue-400',
+      angry: 'bg-red-400',
+      excited: 'bg-green-400',
+      confused: 'bg-purple-400',
+      neutral: 'bg-gray-400'
     }
     return colors[emotion] || colors.neutral
   }
 
   const getEmotionIcon = (emotion) => {
     const icons = {
-      happy: Heart,
-      sad: Brain,
-      angry: Zap,
-      excited: Atom,
-      neutral: MessageCircle,
-      confused: Brain,
-      flirty: Heart
+      happy: '😊',
+      sad: '😢',
+      angry: '😠',
+      excited: '🤩',
+      confused: '😕',
+      neutral: '😐'
     }
     return icons[emotion] || icons.neutral
   }
 
-  const analyzeMessage = (message) => {
-    // Simple emotion analysis based on keywords
-    const lowerMessage = message.toLowerCase()
-    
-    if (lowerMessage.includes('love') || lowerMessage.includes('cute') || lowerMessage.includes('beautiful')) {
-      return 'flirty'
-    } else if (lowerMessage.includes('angry') || lowerMessage.includes('mad') || lowerMessage.includes('hate')) {
-      return 'angry'
-    } else if (lowerMessage.includes('sad') || lowerMessage.includes('sorry') || lowerMessage.includes('hurt')) {
-      return 'sad'
-    } else if (lowerMessage.includes('excited') || lowerMessage.includes('amazing') || lowerMessage.includes('awesome')) {
-      return 'excited'
-    } else if (lowerMessage.includes('confused') || lowerMessage.includes('what') || lowerMessage.includes('?')) {
-      return 'confused'
-    } else if (lowerMessage.includes('happy') || lowerMessage.includes('great') || lowerMessage.includes('wonderful')) {
-      return 'happy'
-    }
-    return 'neutral'
-  }
-
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return
+    if (!input.trim() || isTyping || !selectedCharacter) return
 
     const userMessage = {
       id: Date.now(),
       sender: 'user',
-      content: inputMessage,
-      timestamp: new Date(),
-      emotion: analyzeMessage(inputMessage)
+      content: input.trim(),
+      timestamp: new Date()
     }
 
-    setMessages(prev => [...prev, userMessage])
-    setInputMessage('')
+    // Add user message to history
+    addToHistory(userMessage)
+    setInput('')
     setIsTyping(true)
-    setConversationCount(prev => prev + 1)
 
     try {
-      // Create character-specific prompt
-      const characterPrompt = `You are ${character.name} from Rick and Morty. ${character.description} 
-      Personality: ${character.personality}
-      
-      Respond to this message in character: "${inputMessage}"
-      
-      Keep responses under 150 words and stay true to the character's voice and personality. Be engaging and interactive.`
+      // Generate AI response
+      const response = await generateResponse(
+        selectedCharacter,
+        [...conversationHistory, userMessage],
+        nsfwEnabled
+      )
 
-      const response = await generateResponse(characterPrompt)
-      
-      // Simulate typing delay
-      setTimeout(() => {
-        const characterMessage = {
+      if (response) {
+        const aiMessage = {
           id: Date.now() + 1,
           sender: 'character',
           content: response,
           timestamp: new Date(),
-          emotion: analyzeMessage(response)
+          emotion: currentEmotion
         }
+
+        // Add AI message to history
+        addToHistory(aiMessage)
         
-        setMessages(prev => [...prev, characterMessage])
-        setCurrentEmotion(characterMessage.emotion)
-        setIsTyping(false)
-        
-        // Update affection based on conversation
-        updateAffection(userMessage.emotion, characterMessage.emotion)
-      }, 1000 + Math.random() * 2000)
-      
+        // Update affection based on interaction
+        updateAffection(5)
+      }
     } catch (error) {
       console.error('Error generating response:', error)
-      setIsTyping(false)
-      
-      // Fallback response
-      const fallbackMessage = {
+      const errorMessage = {
         id: Date.now() + 1,
         sender: 'character',
-        content: "*static* Sorry, there seems to be some interdimensional interference. Try again!",
+        content: "*glitches* Sorry, something went wrong with the interdimensional communication...",
         timestamp: new Date(),
         emotion: 'confused'
       }
-      setMessages(prev => [...prev, fallbackMessage])
+      addToHistory(errorMessage)
+    } finally {
+      setIsTyping(false)
     }
   }
 
-  const updateAffection = (userEmotion, characterEmotion) => {
-    let change = 0
-    
-    // Positive interactions
-    if ((userEmotion === 'happy' && characterEmotion === 'happy') ||
-        (userEmotion === 'flirty' && characterEmotion === 'flirty')) {
-      change = 5
-    } else if (userEmotion === 'happy' || characterEmotion === 'happy') {
-      change = 2
-    }
-    
-    // Negative interactions
-    if ((userEmotion === 'angry' && characterEmotion === 'angry') ||
-        (userEmotion === 'sad' && characterEmotion === 'sad')) {
-      change = -3
-    }
-    
-    setAffectionLevel(prev => Math.max(0, Math.min(100, prev + change)))
-  }
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-  }
-
-  const EmotionIcon = getEmotionIcon(currentEmotion)
-
-  return (
-    <motion.div 
-      className="min-h-screen portal-gradient flex flex-col"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      {/* Header */}
-      <motion.div 
-        className="portal-card m-4 p-4 flex items-center justify-between"
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <motion.button
-          className="portal-button bg-gradient-to-r from-gray-700 to-gray-600 text-portal-text px-4 py-2"
-          onClick={onBack}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <ArrowLeft className="inline mr-2" size={18} />
-          Back
-        </motion.button>
-
-        {/* Character Info */}
-        <div className="flex items-center space-x-4">
-          <div className="text-center">
-            <h2 className="text-xl font-bold portal-text">{character.name}</h2>
-            <p className="portal-accent text-sm">{character.title}</p>
-          </div>
-          
-          <div className="relative">
-            <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center portal-glow"
-              style={{ backgroundColor: `${character.color}20` }}
-            >
-              <EmotionIcon 
-                size={32} 
-                style={{ color: getEmotionColor(currentEmotion) }}
-                className="floating-portal"
-              />
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-portal-green border-2 border-gray-900"></div>
-          </div>
-        </div>
-
-        {/* Affection Meter */}
-        <div className="text-right">
-          <div className="flex items-center space-x-2 mb-1">
-            <Heart size={16} className="text-portal-green" />
-            <span className="portal-text text-sm font-semibold">{affectionLevel}%</span>
-          </div>
-          <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
-            <motion.div 
-              className="h-full bg-gradient-to-r from-portal-green to-green-400"
-              initial={{ width: 0 }}
-              animate={{ width: `${affectionLevel}%` }}
-              transition={{ duration: 0.5 }}
-            />
-          </div>
-          <p className="text-xs portal-accent mt-1">Affection</p>
-        </div>
-      </motion.div>
-
-      {/* Chat Area */}
-      <div className="flex-1 mx-4 mb-4 portal-card p-4 flex flex-col">
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4 max-h-96">
-          <AnimatePresence>
-            {messages.map((message) => {
-              return (
-                <motion.div
-                  key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className={`flex items-start space-x-3 max-w-xs lg:max-w-md ${
-                    message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                  }`}>
-                    {/* Profile Picture */}
-                    <div className="flex-shrink-0">
-                      {message.sender === 'user' ? (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-portal-green to-green-600 flex items-center justify-center">
-                          <User size={16} className="text-black" />
-                        </div>
-                      ) : (
-                        <img 
-                          src={getCharacterImage(character.id)} 
-                          alt={character.name}
-                          className="w-8 h-8 rounded-full object-cover border-2"
-                          style={{ borderColor: getEmotionColor(message.emotion) }}
-                        />
-                      )}
-                    </div>
-                    
-                    {/* Message Bubble */}
-                    <div className={`px-4 py-3 rounded-2xl ${
-                      message.sender === 'user' 
-                        ? 'bg-gradient-to-r from-portal-green to-green-600 text-black' 
-                        : 'bg-gradient-to-r from-gray-700 to-gray-600 text-white'
-                    } shadow-lg`}>
-                      <p className="text-sm leading-relaxed">{formatMessage(message.content)}</p>
-                      <p className={`text-xs mt-1 opacity-70`}>
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </AnimatePresence>
-          
-          {/* Typing Indicator */}
-          {isTyping && (
-            <motion.div
-              className="flex justify-start"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <div className="bg-gradient-to-r from-gray-700 to-gray-600 text-white px-4 py-3 rounded-2xl shadow-lg">
-                <div className="flex items-center space-x-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-portal-green rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-portal-green rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-portal-green rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                  <span className="text-sm portal-accent">{character.name} is typing...</span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area */}
-        <div className="flex items-center space-x-3 p-3 bg-gray-800 rounded-xl border border-gray-600">
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={`Message ${character.name}...`}
-            className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none"
-            disabled={isTyping}
-          />
-          <motion.button
-            className={`portal-button px-4 py-2 ${
-              inputMessage.trim() && !isTyping 
-                ? 'bg-gradient-to-r from-portal-green to-green-600 text-black' 
-                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-            }`}
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isTyping}
-            whileHover={inputMessage.trim() && !isTyping ? { scale: 1.05 } : {}}
-            whileTap={inputMessage.trim() && !isTyping ? { scale: 0.95 } : {}}
-          >
-            <Send size={18} />
-          </motion.button>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center portal-gradient">
+        <div className="text-center">
+          <div className="portal-glow w-16 h-16 rounded-full bg-portal-blue mx-auto mb-4 animate-pulse" />
+          <p className="text-portal-text">Loading interdimensional portal...</p>
         </div>
       </div>
+    )
+  }
 
-      {/* Stats Footer */}
-      <motion.div 
-        className="mx-4 mb-4 portal-card p-3"
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <div className="flex justify-between items-center text-sm">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1">
-              <MessageCircle size={14} className="portal-accent" />
-              <span className="portal-accent">Messages: {conversationCount}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Atom size={14} className="portal-accent" />
-              <span className="portal-accent">Dimension: C-137</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span className="portal-accent">Mood:</span>
-            <span 
-              className="font-semibold capitalize"
-              style={{ color: getEmotionColor(currentEmotion) }}
-            >
-              {currentEmotion}
-            </span>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  )
+  return renderScreen()
 }
 
 export default GameScreen
