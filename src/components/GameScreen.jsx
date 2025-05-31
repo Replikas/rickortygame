@@ -51,7 +51,7 @@ const GameScreen = () => {
   } = useDatabase()
 
   // Gemini context
-  const { generateResponse } = useGemini()
+  const { generateResponse, error: geminiError } = useGemini()
 
   // Local state
   const [input, setInput] = useState('')
@@ -481,6 +481,18 @@ const GameScreen = () => {
         <div className="text-center">
           <div className="portal-glow w-16 h-16 rounded-full bg-portal-blue mx-auto mb-4 animate-pulse" />
           <p className="text-portal-text">Loading interdimensional portal...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (geminiError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-red-400 text-center">
+        <div>
+          <h2 className="text-2xl font-bold mb-4">An error occurred</h2>
+          <p>{geminiError}</p>
+          <p className="mt-4">Please check your API key settings or try again later.</p>
         </div>
       </div>
     )
