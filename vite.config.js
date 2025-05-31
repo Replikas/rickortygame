@@ -9,15 +9,9 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
-    rollupOptions: {
-      external: ['pg', 'fs', 'path', 'crypto', 'stream', 'util', 'url', 'net', 'tls', 'events']
-    }
+    sourcemap: false
   },
   define: {
     global: 'globalThis'
-  },
-  optimizeDeps: {
-    exclude: ['pg']
   }
 })
