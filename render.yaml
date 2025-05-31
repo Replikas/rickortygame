@@ -8,6 +8,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        sync: false
       - key: VITE_GEMINI_API_KEY_1
         sync: false
       - key: VITE_GEMINI_API_KEY_2
