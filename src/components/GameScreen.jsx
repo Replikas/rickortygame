@@ -427,6 +427,18 @@ const GameScreen = () => {
     setIsTyping(true)
 
     try {
+      // Save user message to backend
+      await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          character: selectedCharacter.id,
+          message: input.trim(),
+          isUser: true
+        })
+      })
+
       // Generate AI response
       const response = await generateResponse(
         selectedCharacter,
