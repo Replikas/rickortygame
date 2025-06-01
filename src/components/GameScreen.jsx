@@ -7,12 +7,12 @@ import {
   Settings, 
   User, 
   LogOut,
-  Zap,
   MessageCircle,
   Atom,
   Brain,
   Trash2
 } from 'lucide-react'
+import portalGif from '../assets/portal.gif'
 import { useGame } from '../context/GameContext'
 import { useDatabase } from '../context/DatabaseContext'
 import { useOpenRouter } from '../context/OpenRouterContext'
@@ -131,7 +131,12 @@ const GameScreen = () => {
             animate={{ opacity: 1, y: 0 }}
           >
             <div className="portal-glow mx-auto w-32 h-32 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center mb-6">
-              <Zap size={64} className="portal-text floating-portal" />
+              <img 
+                src={portalGif} 
+                alt="Portal" 
+                className="portal-text floating-portal" 
+                style={{width: '64px', height: '64px'}} 
+              />
             </div>
             <h1 className="text-6xl font-bold portal-shadow-lg mb-4">
               <span className="rick-green">RICK</span>
