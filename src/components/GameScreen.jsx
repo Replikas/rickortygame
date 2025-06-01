@@ -246,14 +246,7 @@ const GameScreen = () => {
                 {nsfwEnabled ? '18+' : 'SFW'}
               </button>
               
-              {/* Delete Chat */}
-              <button
-                onClick={clearConversation}
-                className="portal-button-small bg-red-600/20 hover:bg-red-600/40 border-red-500/30"
-                title="Clear conversation history"
-              >
-                <Trash2 size={16} className="text-red-400" />
-              </button>
+
               
               {/* Settings */}
               <button
@@ -418,6 +411,30 @@ const GameScreen = () => {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Quick Questions */}
+            <motion.div 
+              className="mb-4 p-3 bg-gray-800/30 backdrop-blur-sm rounded-xl border border-portal-blue/10"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="text-xs text-gray-400 mb-2">Quick conversation starters:</div>
+              <div className="flex flex-wrap gap-2">
+                {getQuickQuestions(selectedCharacter?.id).map((question, index) => (
+                  <motion.button
+                    key={index}
+                    onClick={() => setInput(question)}
+                    className="px-3 py-1.5 text-xs bg-portal-blue/20 hover:bg-portal-blue/30 border border-portal-blue/30 text-portal-text rounded-lg transition-all duration-200"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isTyping || isThrottling}
+                  >
+                    {question}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+
             {/* Input Area */}
             <motion.div 
               className="flex space-x-3 p-4 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-portal-blue/20"
@@ -434,6 +451,18 @@ const GameScreen = () => {
                 className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-sm px-2 py-3"
                 disabled={isTyping || isThrottling}
               />
+              
+              {/* Delete Chat Button */}
+              <motion.button
+                onClick={clearConversation}
+                className="bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 p-3 rounded-xl shadow-lg transition-all duration-200"
+                whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(220, 38, 38, 0.3)" }}
+                whileTap={{ scale: 0.95 }}
+                title="Clear conversation history"
+              >
+                <Trash2 size={18} />
+              </motion.button>
+              
               <motion.button
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isTyping || isThrottling}
@@ -495,6 +524,40 @@ const GameScreen = () => {
       neutral: '😐'
     }
     return icons[emotion] || icons.neutral
+  }
+
+  const getQuickQuestions = (characterId) => {
+    const questions = {
+      rick: [
+        "What's your latest invention?",
+        "Tell me about your adventures",
+        "What do you think about the multiverse?",
+        "Any portal gun mishaps lately?",
+        "What's your opinion on Jerry?"
+      ],
+      morty: [
+        "How was school today?",
+        "What's the craziest adventure you've been on?",
+        "Are you okay after that last adventure?",
+        "What do you want to be when you grow up?",
+        "How do you deal with Rick's chaos?"
+      ],
+      rick_prime: [
+        "What makes you different from other Ricks?",
+        "Tell me about your plans",
+        "What's your greatest achievement?",
+        "Why are you the superior Rick?",
+        "What do you think of C-137 Rick?"
+      ],
+      evil_morty: [
+        "What are your true intentions?",
+        "How did you become so calculating?",
+        "What's your plan for the Citadel?",
+        "Why did you turn against other Mortys?",
+        "What drives your ambition?"
+      ]
+    }
+    return questions[characterId] || questions.rick
   }
 
   const handleSendMessage = async () => {
