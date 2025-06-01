@@ -497,20 +497,29 @@ const GameScreen = () => {
     
     // Split by lines first
     return safeContent.split('\n').map((line, lineIndex) => {
-      // Process formatting within each line
-      const processedLine = line
-        // Bold text: **text** or __text__
+      // Process formatting within each line - order matters!
+      let processedLine = line
+      
+      // First, handle bold text: **text** or __text__
+      processedLine = processedLine
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/__(.*?)__/g, '<strong>$1</strong>')
-        // Italic text: *text* or _text_
-        .replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>')
-        .replace(/(?<!_)_([^_]+?)_(?!_)/g, '<em>$1</em>')
-        // Actions: *action*
-        .replace(/\*([^*]+?)\*/g, '<span class="text-green-400 italic">*$1*</span>')
-        // Dialogue emphasis: "text"
-        .replace(/"([^"]+?)"/g, '<span class="text-blue-300">"$1"</span>')
-        // Thoughts: (text)
-        .replace(/\(([^)]+?)\)/g, '<span class="text-gray-400 italic">($1)</span>')
+      
+      // Then handle actions: *action* (single asterisks that aren't part of bold)
+      processedLine = processedLine
+        .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<span class="text-green-400 italic">*$1*</span>')
+      
+      // Then handle italic text: _text_ (single underscores that aren't part of bold)
+      processedLine = processedLine
+        .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="text-yellow-300">$1</em>')
+      
+      // Handle dialogue emphasis: "text"
+      processedLine = processedLine
+        .replace(/"([^"\n]+?)"/g, '<span class="text-blue-300 font-medium">"$1"</span>')
+      
+      // Handle thoughts: (text)
+      processedLine = processedLine
+        .replace(/\(([^)\n]+?)\)/g, '<span class="text-gray-400 italic">($1)</span>')
       
       return (
         <span key={lineIndex}>
