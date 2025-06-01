@@ -494,12 +494,31 @@ const GameScreen = () => {
 
   const formatMessage = (content) => {
     const safeContent = typeof content === 'string' ? content : ''
-    return safeContent.split('\n').map((line, index) => (
-      <span key={index}>
-        {line}
-        {index < safeContent.split('\n').length - 1 && <br />}
-      </span>
-    ))
+    
+    // Split by lines first
+    return safeContent.split('\n').map((line, lineIndex) => {
+      // Process formatting within each line
+      const processedLine = line
+        // Bold text: **text** or __text__
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/__(.*?)__/g, '<strong>$1</strong>')
+        // Italic text: *text* or _text_
+        .replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>')
+        .replace(/(?<!_)_([^_]+?)_(?!_)/g, '<em>$1</em>')
+        // Actions: *action*
+        .replace(/\*([^*]+?)\*/g, '<span class="text-green-400 italic">*$1*</span>')
+        // Dialogue emphasis: "text"
+        .replace(/"([^"]+?)"/g, '<span class="text-blue-300">"$1"</span>')
+        // Thoughts: (text)
+        .replace(/\(([^)]+?)\)/g, '<span class="text-gray-400 italic">($1)</span>')
+      
+      return (
+        <span key={lineIndex}>
+          <span dangerouslySetInnerHTML={{ __html: processedLine }} />
+          {lineIndex < safeContent.split('\n').length - 1 && <br />}
+        </span>
+      )
+    })
   }
 
   const getEmotionColor = (emotion) => {
