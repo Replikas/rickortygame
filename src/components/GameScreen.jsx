@@ -570,14 +570,14 @@ const GameScreen = () => {
         "What do you want to be when you grow up?",
         "How do you deal with Rick's chaos?"
       ],
-      rick_prime: [
+      rickprime: [
         "What makes you different from other Ricks?",
         "Tell me about your plans",
         "What's your greatest achievement?",
         "Why are you the superior Rick?",
         "What do you think of C-137 Rick?"
       ],
-      evil_morty: [
+      evilmorty: [
         "What are your true intentions?",
         "How did you become so calculating?",
         "What's your plan for the Citadel?",
@@ -614,10 +614,10 @@ const GameScreen = () => {
           case 'morty':
             aiResponse = "Oh geez, uh, I-I think there's something wrong with the AI thingy? Like, I want to talk to you and all, but it says there's no API key configured or whatever. M-maybe you could go to the settings and fix that? I don't really understand all this technical stuff, but Rick always says you need the right keys for things to work..."
             break
-          case 'evil_morty':
+          case 'evilmorty':
             aiResponse = "*adjusts eyepatch with a calculating smile* How... predictable. You want to chat, but you haven't even bothered to properly configure the system. I suppose I shouldn't be surprised - most people lack the foresight for proper preparation. If you want to have a meaningful conversation, you'll need to set up an OpenRouter API key in the settings. Until then, we're both just wasting time."
             break
-          case 'rick_prime':
+          case 'rickprime':
             aiResponse = "Pathetic. You can't even manage basic configuration. No API key means no conversation - it's that simple. Fix it or don't waste my time."
             break
           default:
