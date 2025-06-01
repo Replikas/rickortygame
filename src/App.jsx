@@ -1,11 +1,8 @@
 import React, { useState } from 'react'
-
-
-
 import { GameStateProvider } from './context/GameStateContext'
 import { SettingsProvider } from './context/SettingsContext'
 import { AudioProvider } from './context/AudioContext'
-import { DatabaseProvider } from './context/DatabaseContext'
+import { DatabaseProvider, useDatabase } from './context/DatabaseContext'
 import { GameProvider } from './context/GameContext'
 import { OpenRouterProvider } from './context/OpenRouterContext'
 import GameScreen from './components/GameScreen'
@@ -38,34 +35,57 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-function App() {
-  const [showLogin, setShowLogin] = useState(true)
+// Inner component that can use the useDatabase hook
+function AppContent() {
+  const { currentUser, isLoading } = useDatabase()
+  const [showLogin, setShowLogin] = useState(false)
+
+  // Show login if no current user and not loading
+  const shouldShowLogin = !currentUser && !isLoading
 
   const handleLoginSuccess = () => {
     setShowLogin(false)
   }
 
+  // Show loading screen while initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-900 via-blue-900 to-purple-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-400 mx-auto mb-4"></div>
+          <p className="text-green-400 text-xl">Loading Rick & Morty Game...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <SettingsProvider>
+      <AudioProvider>
+        <OpenRouterProvider>
+          <GameProvider>
+            <GameStateProvider>
+            {shouldShowLogin ? (
+              <UserLogin onLoginSuccess={handleLoginSuccess} />
+            ) : (
+              <div className="min-h-screen bg-gradient-to-br from-green-900 via-blue-900 to-purple-900">
+                <GameScreen />
+              </div>
+            )}
+            </GameStateProvider>
+          </GameProvider>
+        </OpenRouterProvider>
+       </AudioProvider>
+     </SettingsProvider>
+  )
+}
+
+function App() {
   return (
     <ErrorBoundary>
       <DatabaseProvider>
-        <SettingsProvider>
-          <AudioProvider>
-            <OpenRouterProvider>
-              <GameProvider>
-                <GameStateProvider>
-                {showLogin ? (
-                  <UserLogin onLoginSuccess={handleLoginSuccess} />
-                ) : (
-                  <div className="min-h-screen bg-gradient-to-br from-green-900 via-blue-900 to-purple-900">
-                    <GameScreen />
-                  </div>
-                )}
-                </GameStateProvider>
-              </GameProvider>
-            </OpenRouterProvider>
-           </AudioProvider>
-         </SettingsProvider>
-       </DatabaseProvider>
+        <AppContent />
+      </DatabaseProvider>
     </ErrorBoundary>
   )
 }
