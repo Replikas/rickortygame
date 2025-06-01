@@ -40,7 +40,7 @@ export const GameProvider = ({ children }) => {
       setIsLoading(true)
       try {
         // Load progress
-        const progress = await loadProgress(selectedCharacter)
+        const progress = await loadProgress(selectedCharacter.id)
         if (progress) {
           setAffectionLevel(progress.affection_level || 0)
           setCurrentEmotion(progress.current_emotion || 'neutral')
@@ -49,7 +49,7 @@ export const GameProvider = ({ children }) => {
         }
         
         // Load chat history
-        const history = await loadChatHistory(selectedCharacter, 50)
+        const history = await loadChatHistory(selectedCharacter.id, 50)
         const formattedHistory = history.map(chat => ({
           userInput: chat.user_input,
           response: chat.character_response,
@@ -72,7 +72,7 @@ export const GameProvider = ({ children }) => {
     if (!selectedCharacter || !currentUser) return
 
     const saveInterval = setInterval(() => {
-      autoSave(selectedCharacter, {
+      autoSave(selectedCharacter.id, {
         affectionLevel,
         currentEmotion,
         nsfwEnabled,
@@ -121,7 +121,14 @@ export const GameProvider = ({ children }) => {
     // Save to database if user is logged in
     if (selectedCharacter && currentUser) {
       try {
-        await saveChatToHistory(selectedCharacter, userInput, characterResponse, emotion)
+        // Save user message
+        if (userInput) {
+          await saveChatToHistory(selectedCharacter.id, userInput, true)
+        }
+        // Save character response
+        if (characterResponse) {
+          await saveChatToHistory(selectedCharacter.id, characterResponse, false)
+        }
       } catch (error) {
         console.error('Failed to save chat:', error)
       }
@@ -149,6 +156,10 @@ export const GameProvider = ({ children }) => {
         console.error('Failed to save NSFW setting:', error)
       }
     }
+  }
+
+  const clearConversation = () => {
+    setConversationHistory([])
   }
 
   const resetCharacterProgress = async () => {
@@ -203,6 +214,7 @@ export const GameProvider = ({ children }) => {
     addToHistory,
     setEmotion,
     toggleNSFW,
+    clearConversation,
     resetCharacterProgress,
     
     // Navigation

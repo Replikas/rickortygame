@@ -10,13 +10,16 @@ import {
   Zap,
   MessageCircle,
   Atom,
-  Brain
+  Brain,
+  Trash2
 } from 'lucide-react'
 import { useGame } from '../context/GameContext'
 import { useDatabase } from '../context/DatabaseContext'
-import { useGemini } from '../context/GeminiContext'
+import { useOpenRouter } from '../context/OpenRouterContext'
+
 import CharacterSelect from './CharacterSelect'
 import SettingsPanel from './Settings'
+import DialogueBox from './DialogueBox'
 
 // Character images
 import rickImg from '../assets/sprites/rick/rick.jpg'
@@ -41,7 +44,8 @@ const GameScreen = () => {
     goToSettings,
     addToHistory,
     updateAffection,
-    toggleNSFW
+    toggleNSFW,
+    clearConversation
   } = useGame()
 
   // Database context
@@ -50,12 +54,13 @@ const GameScreen = () => {
     logoutUser
   } = useDatabase()
 
-  // Gemini context
-  const { generateResponse, error: geminiError } = useGemini()
+  // OpenRouter AI provider
+  const { isConnected, isLoading: aiLoading, connectionStatus, generateResponse } = useOpenRouter()
 
   // Local state
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [isThrottling, setIsThrottling] = useState(false)
   const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -202,11 +207,11 @@ const GameScreen = () => {
           <div className="flex items-center justify-between max-w-6xl mx-auto">
             <div className="flex items-center space-x-4">
               <button
-                onClick={goToMenu}
+                onClick={goToCharacterSelect}
                 className="portal-button-small"
               >
                 <ArrowLeft size={16} />
-                Menu
+                Back
               </button>
               <div className="flex items-center space-x-2">
                 <img 
@@ -239,6 +244,15 @@ const GameScreen = () => {
                 }`}
               >
                 {nsfwEnabled ? '18+' : 'SFW'}
+              </button>
+              
+              {/* Delete Chat */}
+              <button
+                onClick={clearConversation}
+                className="portal-button-small bg-red-600/20 hover:bg-red-600/40 border-red-500/30"
+                title="Clear conversation history"
+              >
+                <Trash2 size={16} className="text-red-400" />
               </button>
               
               {/* Settings */}
@@ -303,65 +317,136 @@ const GameScreen = () => {
           {/* Messages */}
           <div className="flex-1 flex flex-col p-6">
             <div className="flex-1 overflow-y-auto space-y-4 mb-4 max-h-96">
-              {conversationHistory.map((message, index) => (
-                <motion.div
-                  key={message.id || index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    message.sender === 'user'
-                      ? 'bg-portal-blue text-white'
-                      : 'bg-gray-800 text-portal-text border border-portal-blue/30'
-                  }`}>
-                    <div className="text-sm">
-                      {formatMessage(message.content)}
+              {conversationHistory.map((entry, index) => {
+                const messages = []
+                
+                // Add user message if it exists
+                if (entry.userInput) {
+                  messages.push({
+                    id: `${index}-user`,
+                    sender: 'user',
+                    content: entry.userInput,
+                    timestamp: entry.timestamp
+                  })
+                }
+                
+                // Add character response if it exists
+                if (entry.response) {
+                  messages.push({
+                    id: `${index}-character`,
+                    sender: 'character',
+                    content: entry.response,
+                    timestamp: entry.timestamp
+                  })
+                }
+                
+                return messages.map((message, msgIndex) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 30, scale: 0.8 }}
+                    animate={{ 
+                      opacity: 1, 
+                      y: 0, 
+                      scale: 1,
+                      transition: {
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30,
+                        delay: msgIndex * 0.1
+                      }
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-3`}
+                  >
+                    <div className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm ${
+                      message.sender === 'user'
+                        ? 'bg-gradient-to-br from-portal-blue to-blue-600 text-white shadow-blue-500/25'
+                        : 'bg-gradient-to-br from-gray-800/90 to-gray-900/90 text-portal-text border border-portal-blue/20 shadow-portal-blue/10'
+                    }`}>
+                      <div className="text-sm leading-relaxed">
+                        {formatMessage(message.content)}
+                      </div>
+                      <div className="text-xs opacity-60 mt-2 text-right">
+                        {new Date(message.timestamp).toLocaleTimeString()}
+                      </div>
                     </div>
-                    <div className="text-xs opacity-70 mt-1">
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))
+              }).flat()}
               
-              {isTyping && (
+              {(isTyping || isThrottling) && (
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-start"
+                  initial={{ opacity: 0, y: 30, scale: 0.8 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0, 
+                    scale: 1,
+                    transition: {
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 25
+                    }
+                  }}
+                  exit={{ opacity: 0, y: -20, scale: 0.8 }}
+                  className="flex justify-start mb-3"
                 >
-                  <div className="bg-gray-800 text-portal-text border border-portal-blue/30 px-4 py-2 rounded-lg">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-portal-blue rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-portal-blue rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <div className="w-2 h-2 bg-portal-blue rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  {isThrottling ? (
+                    <div className="bg-gradient-to-br from-yellow-600/20 to-orange-600/20 text-yellow-300 border border-yellow-500/30 px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}} />
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}} />
+                        </div>
+                        <span className="text-yellow-300 text-sm">Waiting to avoid rate limits...</span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 text-portal-text border border-portal-blue/20 px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-portal-blue rounded-full animate-bounce" style={{animationDelay: '0ms'}} />
+                          <div className="w-2 h-2 bg-portal-blue rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
+                          <div className="w-2 h-2 bg-portal-blue rounded-full animate-bounce" style={{animationDelay: '300ms'}} />
+                        </div>
+                        <span className="text-portal-text text-sm">{selectedCharacter?.name} is typing...</span>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
-            <div className="flex space-x-2">
+            <motion.div 
+              className="flex space-x-3 p-4 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-portal-blue/20"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isTyping && handleSendMessage()}
+                onKeyPress={(e) => e.key === 'Enter' && !isTyping && !isThrottling && handleSendMessage()}
                 placeholder={`Message ${selectedCharacter?.name}...`}
-                className="flex-1 bg-gray-800 border border-portal-blue/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-portal-blue"
-                disabled={isTyping}
+                className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-sm px-2 py-3"
+                disabled={isTyping || isThrottling}
               />
-              <button
+              <motion.button
                 onClick={handleSendMessage}
-                disabled={!input.trim() || isTyping}
-                className="portal-button px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!input.trim() || isTyping || isThrottling}
+                className="bg-gradient-to-r from-portal-blue to-blue-600 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(0, 255, 65, 0.3)" }}
+                whileTap={{ scale: 0.95 }}
+                animate={{
+                  boxShadow: input.trim() ? "0 4px 15px rgba(0, 255, 65, 0.2)" : "0 2px 8px rgba(0, 0, 0, 0.1)"
+                }}
               >
-                <Send size={16} />
-              </button>
-            </div>
+                <Send size={18} />
+              </motion.button>
+            </motion.div>
           </div>
         </div>
       </motion.div>
@@ -422,59 +507,48 @@ const GameScreen = () => {
       timestamp: new Date()
     }
 
-    // Add user message to history
-    addToHistory(input.trim(), null, null)
     setInput('')
     setIsTyping(true)
 
     try {
-      // Save user message to backend
-      await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUser?.id,
-          character: selectedCharacter.id,
-          message: input.trim(),
-          isUser: true
-        })
-      })
 
-      // Generate AI response
-      const formattedHistory = conversationHistory.map(entry => ({ userInput: entry.userInput, response: entry.response }))
-      formattedHistory.push({ userInput: input.trim(), response: null })
-      const response = await generateResponse(
-        selectedCharacter.id,
-        input.trim(),           // userInput should be the actual user input
-        formattedHistory,       // conversationHistory should be the formatted history
-        currentEmotion,         // emotion
-        nsfwEnabled            // nsfwEnabled
-      )
-
-      if (response) {
-        const aiMessage = {
-          id: Date.now() + 1,
-          sender: 'character',
-          content: response,
-          timestamp: new Date(),
-          emotion: currentEmotion
+      // Generate AI response using OpenRouter or fallback message
+      let aiResponse
+      if (!isConnected) {
+        // Character-specific responses about needing AI configuration
+        switch (selectedCharacter.id) {
+          case 'rick':
+            aiResponse = "*burp* Oh great, another genius who can't even configure a simple API key. Look, I'd love to enlighten you with my vast intellect, but apparently whoever set this up forgot the most basic step. Go to settings and get an OpenRouter API key, then maybe we can have a conversation that doesn't make me want to portal gun myself."
+            break
+          case 'morty':
+            aiResponse = "Oh geez, uh, I-I think there's something wrong with the AI thingy? Like, I want to talk to you and all, but it says there's no API key configured or whatever. M-maybe you could go to the settings and fix that? I don't really understand all this technical stuff, but Rick always says you need the right keys for things to work..."
+            break
+          case 'evil_morty':
+            aiResponse = "*adjusts eyepatch with a calculating smile* How... predictable. You want to chat, but you haven't even bothered to properly configure the system. I suppose I shouldn't be surprised - most people lack the foresight for proper preparation. If you want to have a meaningful conversation, you'll need to set up an OpenRouter API key in the settings. Until then, we're both just wasting time."
+            break
+          case 'rick_prime':
+            aiResponse = "Pathetic. You can't even manage basic configuration. No API key means no conversation - it's that simple. Fix it or don't waste my time."
+            break
+          default:
+            aiResponse = `*${selectedCharacter.name} looks confused* Hey, it seems like there's no AI service configured. You'll need to set up an API key in the settings to chat with me properly!`
         }
-
-        // Add AI message to history
-        addToHistory(null, response, currentEmotion)
-        // Update affection based on interaction
-        updateAffection(5)
+      } else {
+        aiResponse = await generateResponse(input.trim(), selectedCharacter, conversationHistory)
       }
-    } catch (error) {
-      console.error('Error generating response:', error)
-      const errorMessage = {
+      
+      // Add AI response to history
+      const characterMessage = {
         id: Date.now() + 1,
         sender: 'character',
-        content: "*glitches* Sorry, something went wrong with the interdimensional communication...",
+        content: aiResponse,
         timestamp: new Date(),
-        emotion: 'confused'
+        emotion: 'neutral' // You can enhance this to detect emotion from response
       }
-      addToHistory(errorMessage)
+      addToHistory(input.trim(), aiResponse, 'neutral')
+    } catch (error) {
+      console.error('Error generating response:', error)
+      const errorMessage = "*glitches* Sorry, something went wrong with the interdimensional communication..."
+      addToHistory(input.trim(), errorMessage, 'confused')
     } finally {
       setIsTyping(false)
     }
@@ -491,17 +565,7 @@ const GameScreen = () => {
     )
   }
 
-  if (geminiError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-red-400 text-center">
-        <div>
-          <h2 className="text-2xl font-bold mb-4">An error occurred</h2>
-          <p>{geminiError}</p>
-          <p className="mt-4">Please check your API key settings or try again later.</p>
-        </div>
-      </div>
-    )
-  }
+  // Remove the immediate error display - let users navigate normally
 
   return renderScreen()
 }

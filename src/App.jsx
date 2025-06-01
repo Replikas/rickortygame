@@ -1,7 +1,13 @@
 import React, { useState } from 'react'
-import { GeminiProvider } from './context/GeminiContext'
-import { GameProvider } from './context/GameContext'
+
+
+
+import { GameStateProvider } from './context/GameStateContext'
+import { SettingsProvider } from './context/SettingsContext'
+import { AudioProvider } from './context/AudioContext'
 import { DatabaseProvider } from './context/DatabaseContext'
+import { GameProvider } from './context/GameContext'
+import { OpenRouterProvider } from './context/OpenRouterContext'
 import GameScreen from './components/GameScreen'
 import UserLogin from './components/UserLogin'
 
@@ -42,18 +48,24 @@ function App() {
   return (
     <ErrorBoundary>
       <DatabaseProvider>
-        <GeminiProvider>
-          <GameProvider>
-            {showLogin ? (
-              <UserLogin onLoginSuccess={handleLoginSuccess} />
-            ) : (
-              <div className="min-h-screen bg-gradient-to-br from-green-900 via-blue-900 to-purple-900">
-                <GameScreen />
-              </div>
-            )}
-          </GameProvider>
-        </GeminiProvider>
-      </DatabaseProvider>
+        <SettingsProvider>
+          <AudioProvider>
+            <OpenRouterProvider>
+              <GameProvider>
+                <GameStateProvider>
+                {showLogin ? (
+                  <UserLogin onLoginSuccess={handleLoginSuccess} />
+                ) : (
+                  <div className="min-h-screen bg-gradient-to-br from-green-900 via-blue-900 to-purple-900">
+                    <GameScreen />
+                  </div>
+                )}
+                </GameStateProvider>
+              </GameProvider>
+            </OpenRouterProvider>
+           </AudioProvider>
+         </SettingsProvider>
+       </DatabaseProvider>
     </ErrorBoundary>
   )
 }

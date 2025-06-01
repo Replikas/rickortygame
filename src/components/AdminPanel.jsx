@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGame } from '../context/GameContext'
-import { useGemini } from '../context/GeminiContext'
+
 import { 
   ArrowLeft, 
   Settings, 
@@ -22,7 +22,8 @@ import {
 const AdminPanel = () => {
   const navigate = useNavigate()
   const { gameState, logWebhook } = useGame()
-  const { characterPrompts } = useGemini()
+  // No AI provider available
+  const getAvailableCharacters = () => []
   
   const [activeTab, setActiveTab] = useState('characters')
   const [editingCharacter, setEditingCharacter] = useState(null)

@@ -1,0 +1,26 @@
+{
+  "rick": {
+    "model": "llama3:8b",
+    "promptPath": "./prompts/rick.txt",
+    "nsfw": true,
+    "description": "Handles sarcasm, depth, and dark humor with long context windows. Great for philosophical rambling and interdimensional flexing."
+  },
+  "morty": {
+    "model": "phi3:mini",
+    "promptPath": "./prompts/morty.txt",
+    "nsfw": false,
+    "description": "Lightweight but emotionally intuitive. Good at nervous chatter, honesty, and sweet-but-dumb moments. Less likely to spiral into chaos."
+  },
+  "evil_morty": {
+    "model": "mistral",
+    "promptPath": "./prompts/evil_morty.txt",
+    "nsfw": true,
+    "description": "Strategic, calculated tone. Handles abstract reasoning and persuasive dialogue well. Ideal for manipulation and long-game flirts."
+  },
+  "rick_prime": {
+    "model": "tinyllama",
+    "promptPath": "./prompts/rick_prime.txt",
+    "nsfw": true,
+    "description": "Cold, clipped, efficient. Doesn't need fluff—just superiority and sharp dismissal. TinyLLaMA is small, fast, and perfectly villainous."
+  }
+}

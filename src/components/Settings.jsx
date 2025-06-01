@@ -1,22 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Volume2, VolumeX, Monitor, Moon, Sun, Zap, Brain, Heart, Settings as SettingsIcon, Key, Eye, EyeOff } from 'lucide-react'
-import { useGemini } from '../context/GeminiContext'
+import { ArrowLeft, Volume2, VolumeX, Monitor, Moon, Sun, Zap, Brain, Heart, Key, Settings as SettingsIcon, Check } from 'lucide-react'
+
+import { useAudio } from '../context/AudioContext'
+import { useSettings } from '../context/SettingsContext'
+import OpenRouterSettings from './OpenRouterSettings'
 
 function Settings({ onBack }) {
-  const { apiKey, hasApiKeys, keyCount } = useGemini()
-  const [settings, setSettings] = useState({
-    soundEnabled: true,
-    musicVolume: 75,
-    sfxVolume: 50,
-    theme: 'dark',
-    autoSave: true,
-    nsfwContent: false,
-    difficulty: 'normal',
-    textSpeed: 'medium',
-    showEmotions: true,
-    particleEffects: true
-  })
+  const { settings, updateSetting, resetSettings } = useSettings()
+  const [showSavedMessage, setShowSavedMessage] = useState(false)
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -43,27 +35,23 @@ function Settings({ onBack }) {
   }
 
   const handleSettingChange = (key, value) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
-    // Here you would typically save to localStorage or context
-    localStorage.setItem('rickMortySettings', JSON.stringify({ ...settings, [key]: value }))
+    updateSetting(key, value)
+    setShowSavedMessage(true)
   }
 
-  const resetSettings = () => {
-    const defaultSettings = {
-      soundEnabled: true,
-      musicVolume: 75,
-      sfxVolume: 50,
-      theme: 'dark',
-      autoSave: true,
-      nsfwContent: false,
-      difficulty: 'normal',
-      textSpeed: 'medium',
-      showEmotions: true,
-      particleEffects: true
-    }
-    setSettings(defaultSettings)
-    localStorage.setItem('rickMortySettings', JSON.stringify(defaultSettings))
+  const handleResetSettings = () => {
+    resetSettings()
+    setShowSavedMessage(true)
   }
+
+  useEffect(() => {
+    if (showSavedMessage) {
+      const timer = setTimeout(() => {
+        setShowSavedMessage(false)
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [showSavedMessage])
 
   return (
     <motion.div 
@@ -88,17 +76,41 @@ function Settings({ onBack }) {
             Back to Menu
           </motion.button>
           
-          <div className="text-center">
+          <div className="text-center relative">
             <h1 className="text-4xl font-bold portal-shadow-lg mb-2">
               <span className="rick-green">Portal</span>
               <span className="text-gray-400"> </span>
               <span className="morty-yellow">Settings</span>
             </h1>
             <p className="portal-accent text-lg">Configure your interdimensional experience</p>
+            
+            {/* Saved Message */}
+            {showSavedMessage && (
+              <motion.div
+                className="absolute top-0 right-0 bg-portal-green text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
+                initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Check size={16} />
+                <span className="font-semibold">Saved!</span>
+              </motion.div>
+            )}
           </div>
           
           <div className="w-32"></div> {/* Spacer for centering */}
         </div>
+      </motion.div>
+
+      {/* AI Provider Settings */}
+      <motion.div 
+        className="mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <OpenRouterSettings />
       </motion.div>
 
       {/* Settings Grid */}
@@ -119,14 +131,14 @@ function Settings({ onBack }) {
               <span className="portal-accent">Sound Effects</span>
               <motion.button
                 className={`w-12 h-6 rounded-full transition-all duration-300 ${
-                  settings.soundEnabled ? 'bg-portal-green' : 'bg-gray-600'
+                  !settings.muteAll ? 'bg-portal-green' : 'bg-gray-600'
                 }`}
-                onClick={() => handleSettingChange('soundEnabled', !settings.soundEnabled)}
+                onClick={() => handleSettingChange('muteAll', !settings.muteAll)}
                 whileTap={{ scale: 0.95 }}
               >
                 <motion.div
                   className="w-5 h-5 bg-white rounded-full shadow-lg"
-                  animate={{ x: settings.soundEnabled ? 24 : 2 }}
+                  animate={{ x: !settings.muteAll ? 24 : 2 }}
                   transition={{ duration: 0.2 }}
                 />
               </motion.button>
@@ -136,14 +148,14 @@ function Settings({ onBack }) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="portal-accent">Music Volume</span>
-                <span className="text-portal-green font-semibold">{settings.musicVolume}%</span>
+                <span className="text-portal-green font-semibold">{Math.round((settings.musicVolume || 0) * 100)}%</span>
               </div>
               <input
                 type="range"
                 min="0"
                 max="100"
-                value={settings.musicVolume}
-                onChange={(e) => handleSettingChange('musicVolume', parseInt(e.target.value))}
+                value={Math.round((settings.musicVolume || 0) * 100)}
+                onChange={(e) => handleSettingChange('musicVolume', parseInt(e.target.value) / 100)}
                 className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
               />
             </div>
@@ -152,14 +164,14 @@ function Settings({ onBack }) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="portal-accent">SFX Volume</span>
-                <span className="text-portal-green font-semibold">{settings.sfxVolume}%</span>
+                <span className="text-portal-green font-semibold">{Math.round((settings.sfxVolume || 0) * 100)}%</span>
               </div>
               <input
                 type="range"
                 min="0"
                 max="100"
-                value={settings.sfxVolume}
-                onChange={(e) => handleSettingChange('sfxVolume', parseInt(e.target.value))}
+                value={Math.round((settings.sfxVolume || 0) * 100)}
+                onChange={(e) => handleSettingChange('sfxVolume', parseInt(e.target.value) / 100)}
                 className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
               />
             </div>
@@ -209,37 +221,37 @@ function Settings({ onBack }) {
               </div>
             </div>
             
-            {/* Particle Effects */}
+            {/* Reduced Motion */}
             <div className="flex items-center justify-between">
-              <span className="portal-accent">Particle Effects</span>
+              <span className="portal-accent">Reduced Motion</span>
               <motion.button
                 className={`w-12 h-6 rounded-full transition-all duration-300 ${
-                  settings.particleEffects ? 'bg-portal-green' : 'bg-gray-600'
+                  settings.reducedMotion ? 'bg-portal-green' : 'bg-gray-600'
                 }`}
-                onClick={() => handleSettingChange('particleEffects', !settings.particleEffects)}
+                onClick={() => handleSettingChange('reducedMotion', !settings.reducedMotion)}
                 whileTap={{ scale: 0.95 }}
               >
                 <motion.div
                   className="w-5 h-5 bg-white rounded-full shadow-lg"
-                  animate={{ x: settings.particleEffects ? 24 : 2 }}
+                  animate={{ x: settings.reducedMotion ? 24 : 2 }}
                   transition={{ duration: 0.2 }}
                 />
               </motion.button>
             </div>
             
-            {/* Show Emotions */}
+            {/* Show Subtitles */}
             <div className="flex items-center justify-between">
-              <span className="portal-accent">Show Emotions</span>
+              <span className="portal-accent">Show Subtitles</span>
               <motion.button
                 className={`w-12 h-6 rounded-full transition-all duration-300 ${
-                  settings.showEmotions ? 'bg-portal-green' : 'bg-gray-600'
+                  settings.showSubtitles ? 'bg-portal-green' : 'bg-gray-600'
                 }`}
-                onClick={() => handleSettingChange('showEmotions', !settings.showEmotions)}
+                onClick={() => handleSettingChange('showSubtitles', !settings.showSubtitles)}
                 whileTap={{ scale: 0.95 }}
               >
                 <motion.div
                   className="w-5 h-5 bg-white rounded-full shadow-lg"
-                  animate={{ x: settings.showEmotions ? 24 : 2 }}
+                  animate={{ x: settings.showSubtitles ? 24 : 2 }}
                   transition={{ duration: 0.2 }}
                 />
               </motion.button>
@@ -257,41 +269,37 @@ function Settings({ onBack }) {
           </div>
           
           <div className="space-y-4">
-            {/* Difficulty */}
-            <div className="space-y-2">
-              <span className="portal-accent">Difficulty</span>
-              <div className="grid grid-cols-3 gap-2">
-                {['easy', 'normal', 'hard'].map((diff) => (
-                  <motion.button
-                    key={diff}
-                    className={`p-2 rounded-lg border-2 transition-all duration-300 ${
-                      settings.difficulty === diff 
-                        ? 'border-portal-green bg-portal-green/20' 
-                        : 'border-gray-600 bg-gray-700'
-                    }`}
-                    onClick={() => handleSettingChange('difficulty', diff)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <span className="text-sm portal-accent capitalize">{diff}</span>
-                  </motion.button>
-                ))}
-              </div>
+            {/* Auto Advance */}
+            <div className="flex items-center justify-between">
+              <span className="portal-accent">Auto Advance</span>
+              <motion.button
+                className={`w-12 h-6 rounded-full transition-all duration-300 ${
+                  settings.autoAdvance ? 'bg-portal-green' : 'bg-gray-600'
+                }`}
+                onClick={() => handleSettingChange('autoAdvance', !settings.autoAdvance)}
+                whileTap={{ scale: 0.95 }}
+              >
+                <motion.div
+                  className="w-5 h-5 bg-white rounded-full shadow-lg"
+                  animate={{ x: settings.autoAdvance ? 24 : 2 }}
+                  transition={{ duration: 0.2 }}
+                />
+              </motion.button>
             </div>
             
-            {/* Text Speed */}
+            {/* Animation Speed */}
             <div className="space-y-2">
-              <span className="portal-accent">Text Speed</span>
-              <div className="grid grid-cols-3 gap-2">
-                {['slow', 'medium', 'fast'].map((speed) => (
+              <span className="portal-accent">Animation Speed</span>
+              <div className="grid grid-cols-4 gap-2">
+                {['slow', 'normal', 'fast', 'off'].map((speed) => (
                   <motion.button
                     key={speed}
                     className={`p-2 rounded-lg border-2 transition-all duration-300 ${
-                      settings.textSpeed === speed 
+                      settings.animationSpeed === speed 
                         ? 'border-portal-green bg-portal-green/20' 
                         : 'border-gray-600 bg-gray-700'
                     }`}
-                    onClick={() => handleSettingChange('textSpeed', speed)}
+                    onClick={() => handleSettingChange('animationSpeed', speed)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -367,62 +375,18 @@ function Settings({ onBack }) {
           </div>
         </motion.div>
 
-        {/* API Status */}
+        {/* Placeholder for future settings */}
         <motion.div 
           className="portal-card p-6"
           variants={cardVariants}
         >
           <div className="flex items-center space-x-3 mb-6">
-            <Key className="text-portal-green" size={24} />
-            <h2 className="text-xl font-bold portal-text">API Status</h2>
-          </div>
-          
-          <div className="space-y-4">
-            {/* Service Status */}
-            <div className="bg-gray-800 rounded-lg p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className={`w-4 h-4 rounded-full ${
-                  hasApiKeys ? 'bg-green-400' : 'bg-red-400'
-                }`} />
-                <h3 className="text-lg font-semibold portal-text">
-                  Service Status: {hasApiKeys ? 'Online' : 'Offline'}
-                </h3>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <div className="text-2xl font-bold portal-text">{keyCount}</div>
-                  <div className="text-sm text-gray-400">API Keys</div>
-                </div>
-                
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-green-400">
-                    {hasApiKeys ? '✓' : '✗'}
-                  </div>
-                  <div className="text-sm text-gray-400">Ready</div>
-                </div>
-                
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-blue-400">
-                    {keyCount > 1 ? '✓' : '✗'}
-                  </div>
-                  <div className="text-sm text-gray-400">Auto-Rotation</div>
-                </div>
-              </div>
-              
-              <div className="mt-4 p-4 bg-blue-900/20 border border-blue-600 rounded-lg">
-                <p className="text-sm text-blue-300 mb-2">
-                  <strong>Service Information:</strong>
-                </p>
-                <ul className="text-xs text-gray-300 space-y-1">
-                  <li>• API keys are managed server-side by the administrator</li>
-                  <li>• {keyCount > 1 ? 'Multiple keys provide automatic failover when rate limits are hit' : 'Single key configuration - contact admin for backup keys'}</li>
-                  <li>• {hasApiKeys ? 'Characters are ready to chat!' : 'Service unavailable - contact administrator'}</li>
-                  <li>• All conversations are processed securely</li>
-                </ul>
-              </div>
+            <div className="portal-glow w-12 h-12 rounded-full bg-gradient-to-br from-purple-900 to-gray-900 flex items-center justify-center">
+              <SettingsIcon size={24} className="portal-text" />
             </div>
+            <h3 className="text-xl font-bold portal-text">Additional Settings</h3>
           </div>
+          <p className="portal-text opacity-70">More settings coming soon...</p>
         </motion.div>
       </div>
 
@@ -433,7 +397,7 @@ function Settings({ onBack }) {
       >
         <motion.button
           className="portal-button bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3"
-          onClick={resetSettings}
+          onClick={handleResetSettings}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >

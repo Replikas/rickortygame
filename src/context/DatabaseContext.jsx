@@ -148,8 +148,42 @@ export const DatabaseProvider = ({ children }) => {
   const saveChatToHistory = async (character, message, isUser = false) => {
     if (!currentUser) return;
     
+    // Always use localStorage as fallback when database is disabled
+    const useLocalStorage = () => {
+      const storageKey = `chat_${currentUser.id}_${character}`;
+      const existingHistory = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      
+      // Find if there's a recent entry to pair with (within last 5 minutes)
+      const lastEntry = existingHistory[existingHistory.length - 1];
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const canPair = lastEntry && 
+        new Date(lastEntry.timestamp) > fiveMinutesAgo &&
+        ((isUser && !lastEntry.user_input && lastEntry.character_response) || 
+         (!isUser && !lastEntry.character_response && lastEntry.user_input));
+      
+      if (canPair) {
+        // Update the last entry
+        if (isUser) {
+          lastEntry.user_input = message;
+        } else {
+          lastEntry.character_response = message;
+        }
+      } else {
+        // Add new entry
+        const newEntry = {
+          user_input: isUser ? message : null,
+          character_response: !isUser ? message : null,
+          timestamp: new Date().toISOString(),
+          emotion: 'neutral'
+        };
+        existingHistory.push(newEntry);
+      }
+      
+      localStorage.setItem(storageKey, JSON.stringify(existingHistory));
+    };
+    
     try {
-      await fetch(`${API_BASE}/api/chat`, {
+      const response = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -159,8 +193,15 @@ export const DatabaseProvider = ({ children }) => {
           isUser
         })
       });
+      
+      // If database call fails, use localStorage
+      if (!response.ok) {
+        useLocalStorage();
+      }
     } catch (err) {
       console.error('Failed to save chat message:', err);
+      // Use localStorage on any error
+      useLocalStorage();
     }
   };
 
@@ -172,10 +213,18 @@ export const DatabaseProvider = ({ children }) => {
       if (response.ok) {
         return await response.json();
       }
-      return [];
+      
+      // If database is disabled, use localStorage as fallback
+      const storageKey = `chat_${currentUser.id}_${character}`;
+      const localHistory = localStorage.getItem(storageKey);
+      return localHistory ? JSON.parse(localHistory) : [];
     } catch (err) {
       console.error('Failed to load chat history:', err);
-      return [];
+      
+      // Fallback to localStorage
+      const storageKey = `chat_${currentUser.id}_${character}`;
+      const localHistory = localStorage.getItem(storageKey);
+      return localHistory ? JSON.parse(localHistory) : [];
     }
   };
 

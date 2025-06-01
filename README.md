@@ -1,21 +1,50 @@
-# Rick & Morty Dating Simulator 🛸💕
+# 🚀 Rick and Morty Dating Simulator
 
-A full-featured, AI-powered dating simulator featuring characters from Rick and Morty, built with React and powered by Google's Gemini AI.
+> An AI-powered dating simulator featuring Rick, Morty, Evil Morty, and Rick Prime
+
+## 🎯 Project Overview
+
+This is a dating simulator featuring Rick and Morty characters. The application features a modern React frontend with Express.js backend. Note: AI providers have been removed - character conversations are currently disabled.
 
 ## 🌟 Features
 
 ### Core Gameplay
-- **Dynamic AI Conversations**: Powered by Gemini API with character-specific personalities
-- **Emotional Sprite System**: Characters react with different expressions and animations
-- **Affection Tracking**: Build relationships through meaningful interactions
-- **Branching Dialogue**: Choose from preset options or type custom responses
-- **NSFW Toggle**: Mature content mode with appropriate character behavior changes
+- **Character Selection**: Choose from multiple Rick and Morty characters
+- **Affection System**: Build relationships through meaningful interactions (currently disabled)
+- **Modern UI**: Beautiful, responsive interface with smooth animations
+- **Game Interface**: Complete dating simulator interface
+- **Settings Management**: Comprehensive settings and configuration options
+- **Note**: AI conversations are currently disabled - all AI providers have been removed
 
-### Characters Available
-- **Rick Sanchez**: Genius scientist with drinking problem and zero filter
-- **Morty Smith**: Anxious teenager who's seen too much
-- **Summer Smith**: Popular teen with hidden depths (unlockable)
-- **Beth Smith**: Surgeon with daddy issues (unlockable)
+## 🎭 Available Characters
+
+### Rick Sanchez
+- **Personality**: Genius scientist with drinking problem and zero filter
+- **Traits**: Sarcastic, brilliant, nihilistic, interdimensional traveler
+- **NSFW**: Enabled
+
+### Morty Smith
+- **Personality**: Anxious teenager dragged into interdimensional adventures
+- **Traits**: Nervous, honest, sweet, morally conscious
+- **NSFW**: Disabled
+
+### Evil Morty
+- **Personality**: The Morty who got tired of being a sidekick
+- **Traits**: Strategic, calculated, manipulative, intelligent
+- **NSFW**: Enabled
+
+### Rick Prime
+- **Personality**: The Rick who killed C-137 Rick's family
+- **Traits**: Cold, efficient, superior, villainous
+- **NSFW**: Enabled
+
+### 🔧 AI Provider Configuration
+
+The application supports:
+
+**Note**: AI providers have been removed from this application
+
+You can switch between providers in the settings panel within the application.
 
 ### Advanced Features
 - **Sprite Animation System**: CSS transitions and emotion-based sprite changes
@@ -28,13 +57,13 @@ A full-featured, AI-powered dating simulator featuring characters from Rick and 
 
 ### Prerequisites
 - Node.js 16+ installed
-- A free Gemini API key from [Google AI Studio](https://ai.google.dev/)
+- Note: AI functionality has been removed
 
 ### Installation
 
 1. **Clone or download this project**
    ```bash
-   cd gametest
+   cd rickortygametest2
    ```
 
 2. **Install dependencies**
@@ -42,23 +71,24 @@ A full-featured, AI-powered dating simulator featuring characters from Rick and 
    npm install
    ```
 
-3. **Start the development server**
+3. **Configure environment (optional)**
    ```bash
-   npm run dev
+   cp .env.example .env
+   # No API keys required - AI functionality has been removed
    ```
 
-4. **Open your browser**
+4. **Start the server**
+   ```bash
+   npm start
+   ```
+
+5. **Open your browser**
    - Navigate to `http://localhost:3000`
    - The app should open automatically
 
-### Getting Your Gemini API Key
+### Note on AI Functionality
 
-1. Visit [ai.google.dev](https://ai.google.dev/)
-2. Click "Get API Key" or "View Gemini API docs"
-3. Sign in with your Google account
-4. Create a new API key in Google AI Studio
-5. Copy the API key
-6. In the app, go to Settings and paste your API key
+All AI providers (OpenRouter and Remote Ollama) have been removed from this application. Character conversations are currently disabled. The application retains its full interface and game mechanics, but AI-powered responses are not available.
 
 ## 🎮 How to Play
 
@@ -96,6 +126,8 @@ src/
 ├── context/              # React Context providers
 │   ├── GameContext.jsx        # Game state management
 │   └── GeminiContext.jsx      # AI integration
+├── config/
+│   └── characters.json       # Character-specific model configurations
 ├── App.jsx              # Main app component
 ├── main.jsx             # React entry point
 └── index.css            # Global styles and Tailwind
