@@ -5,6 +5,25 @@
 @layer base {
   * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Mobile touch optimization */
+  button, input[type="submit"], input[type="button"] {
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  /* Prevent zoom on input focus on mobile */
+  input, textarea, select {
+    font-size: 16px;
+  }
+  
+  @media screen and (max-width: 768px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
   }
   
   body {

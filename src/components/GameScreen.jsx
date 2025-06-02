@@ -539,11 +539,13 @@ const GameScreen = () => {
             <motion.form 
               onSubmit={(e) => {
                 e.preventDefault()
+                e.stopPropagation()
                 if (!isTyping && !isThrottling && input.trim()) {
                   handleSendMessage()
                 }
               }}
               className="flex space-x-2 lg:space-x-3 p-3 lg:p-4 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-portal-blue/20"
+              style={{ touchAction: 'manipulation' }}
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
@@ -555,6 +557,7 @@ const GameScreen = () => {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
+                    e.stopPropagation()
                     if (!isTyping && !isThrottling && input.trim()) {
                       handleSendMessage()
                     }
@@ -562,9 +565,11 @@ const GameScreen = () => {
                 }}
                 placeholder={`Message ${selectedCharacter?.name}...`}
                 className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-base lg:text-base px-2 py-3 min-w-0"
+                style={{ touchAction: 'manipulation' }}
                 disabled={isTyping || isThrottling}
                 autoComplete="off"
                 autoCapitalize="sentences"
+                inputMode="text"
               />
               
               {/* Delete Chat Button */}
@@ -582,12 +587,21 @@ const GameScreen = () => {
                 type="submit"
                 onClick={(e) => {
                   e.preventDefault()
+                  e.stopPropagation()
+                  if (!isTyping && !isThrottling && input.trim()) {
+                    handleSendMessage()
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
                   if (!isTyping && !isThrottling && input.trim()) {
                     handleSendMessage()
                   }
                 }}
                 disabled={!input.trim() || isTyping || isThrottling}
-                className="bg-gradient-to-r from-portal-blue to-blue-600 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[48px] min-h-[48px] lg:min-w-[44px] lg:min-h-[44px] flex items-center justify-center"
+                className="bg-gradient-to-r from-portal-blue to-blue-600 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[48px] min-h-[48px] lg:min-w-[44px] lg:min-h-[44px] flex items-center justify-center touch-manipulation"
+                style={{ touchAction: 'manipulation' }}
                 whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(0, 255, 65, 0.3)" }}
                 whileTap={{ scale: 0.95 }}
                 animate={{
