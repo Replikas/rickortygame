@@ -267,10 +267,39 @@ const GameScreen = () => {
           </div>
         </div>
 
-        {/* Chat Area */}
-        <div className="flex-1 flex max-w-6xl mx-auto w-full">
-          {/* Character Display */}
-          <div className="w-1/3 p-6 flex flex-col items-center justify-center">
+        {/* Chat Area - Mobile First Design */}
+        <div className="flex-1 flex flex-col lg:flex-row max-w-6xl mx-auto w-full">
+          {/* Mobile: Character Display - Compact Header */}
+          <div className="lg:hidden bg-black/30 backdrop-blur-sm border-b border-portal-blue/30 p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <img 
+                    src={getCharacterImage(selectedCharacter.id)} 
+                    alt={selectedCharacter.name}
+                    className="w-12 h-12 object-cover rounded-full border-2 border-portal-blue/50"
+                  />
+                  <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${getEmotionColor(currentEmotion)} flex items-center justify-center text-xs`}>
+                    {getEmotionIcon(currentEmotion)}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-sm">{selectedCharacter.name}</h3>
+                  <div className="flex items-center space-x-1 text-xs">
+                    <Heart 
+                      size={12} 
+                      className={`${affectionLevel >= 20 ? 'text-red-500' : 'text-gray-400'}`}
+                      fill={affectionLevel >= 20 ? 'currentColor' : 'none'}
+                    />
+                    <span className="text-gray-300">{affectionLevel}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop: Character Display - Sidebar */}
+          <div className="hidden lg:flex lg:w-1/3 p-6 flex-col items-center justify-center">
             <motion.div 
               className="relative"
               animate={{ 
@@ -314,7 +343,7 @@ const GameScreen = () => {
 
           {/* Messages */}
           <div className="flex-1 flex flex-col p-3 sm:p-6">
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4 max-h-96 sm:max-h-[500px]">
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4 max-h-96 sm:max-h-[500px] min-h-0">
               {conversationHistory.map((entry, index) => {
                 const messages = []
                 
@@ -414,7 +443,7 @@ const GameScreen = () => {
                     whileHover={{ scale: 1.02 }}
                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-3`}
                   >
-                    <div className={`max-w-[280px] sm:max-w-xs lg:max-w-md px-4 sm:px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 ${
+                    <div className={`max-w-[85%] sm:max-w-[75%] lg:max-w-md px-3 lg:px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 ${
                       message.sender === 'user'
                         ? 'bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-blue-500/40 border-2 border-blue-400/50 ml-auto'
                         : `bg-gradient-to-br from-gray-800/95 to-gray-900/95 text-portal-text border-2 shadow-lg mr-auto ${
@@ -481,33 +510,34 @@ const GameScreen = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Questions */}
+            {/* Quick Questions - Mobile Optimized */}
             <motion.div 
-              className="mb-4 p-3 bg-gray-800/30 backdrop-blur-sm rounded-xl border border-portal-blue/10"
+              className="mb-3 lg:mb-4 p-2 lg:p-3 bg-gray-800/30 backdrop-blur-sm rounded-xl border border-portal-blue/10"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              <div className="text-xs text-gray-400 mb-2">Quick conversation starters:</div>
-              <div className="flex flex-wrap gap-2">
-                {getQuickQuestions(selectedCharacter?.id).map((question, index) => (
+              <div className="text-xs text-gray-400 mb-2 lg:hidden">Quick starters:</div>
+              <div className="hidden lg:block text-xs text-gray-400 mb-2">Quick conversation starters:</div>
+              <div className="flex flex-wrap gap-1.5 lg:gap-2">
+                {getQuickQuestions(selectedCharacter?.id).slice(0, 4).map((question, index) => (
                   <motion.button
                     key={index}
                     onClick={() => setInput(question)}
-                    className="px-3 py-1.5 text-xs bg-portal-blue/20 hover:bg-portal-blue/30 border border-portal-blue/30 text-portal-text rounded-lg transition-all duration-200"
+                    className="px-2 lg:px-3 py-1.5 lg:py-2 text-xs bg-portal-blue/20 hover:bg-portal-blue/30 border border-portal-blue/30 text-portal-text rounded-lg transition-all duration-200 min-h-[36px] flex items-center justify-center"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isTyping || isThrottling}
                   >
-                    {question}
+                    <span className="text-center leading-tight">{question}</span>
                   </motion.button>
                 ))}
               </div>
             </motion.div>
 
-            {/* Input Area */}
+            {/* Input Area - Mobile Optimized */}
             <motion.div 
-              className="flex space-x-2 sm:space-x-3 p-3 sm:p-4 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-portal-blue/20"
+              className="flex space-x-2 lg:space-x-3 p-3 lg:p-4 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-portal-blue/20"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
@@ -518,32 +548,32 @@ const GameScreen = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && !isTyping && !isThrottling && handleSendMessage()}
                 placeholder={`Message ${selectedCharacter?.name}...`}
-                className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-sm sm:text-base px-2 py-3 min-w-0"
+                className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-base lg:text-base px-2 py-3 min-w-0"
                 disabled={isTyping || isThrottling}
               />
               
               {/* Delete Chat Button */}
               <motion.button
                 onClick={clearConversation}
-                className="bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 p-3 sm:p-3 rounded-xl shadow-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 p-3 rounded-xl shadow-lg transition-all duration-200 min-w-[48px] min-h-[48px] lg:min-w-[44px] lg:min-h-[44px] flex items-center justify-center"
                 whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(220, 38, 38, 0.3)" }}
                 whileTap={{ scale: 0.95 }}
                 title="Clear conversation history"
               >
-                <Trash2 size={18} />
+                <Trash2 size={18} className="lg:w-4 lg:h-4" />
               </motion.button>
               
               <motion.button
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isTyping || isThrottling}
-                className="bg-gradient-to-r from-portal-blue to-blue-600 text-white p-3 sm:p-3 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="bg-gradient-to-r from-portal-blue to-blue-600 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[48px] min-h-[48px] lg:min-w-[44px] lg:min-h-[44px] flex items-center justify-center"
                 whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(0, 255, 65, 0.3)" }}
                 whileTap={{ scale: 0.95 }}
                 animate={{
                   boxShadow: input.trim() ? "0 4px 15px rgba(0, 255, 65, 0.2)" : "0 2px 8px rgba(0, 0, 0, 0.1)"
                 }}
               >
-                <Send size={18} />
+                <Send size={18} className="lg:w-4 lg:h-4" />
               </motion.button>
             </motion.div>
           </div>
