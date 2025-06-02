@@ -46,7 +46,8 @@ const GameScreen = () => {
     addToHistory,
     updateAffection,
     toggleNSFW,
-    clearConversation
+    clearConversation,
+    setEmotion
   } = useGame()
 
   // Database context
