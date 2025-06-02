@@ -9,93 +9,140 @@ const __dirname = dirname(__filename);
 
 // Database functions will be loaded dynamically
 let db = {};
-
 let dbInitialized = false;
 
-// Database functionality disabled - using mock mode
-console.log('📝 Database disabled - using mock mode for testing');
-dbInitialized = true;
+// Check if DATABASE_URL is available for real database
+if (process.env.DATABASE_URL) {
+  console.log('🗄️ Database URL found - enabling real database functionality');
+  try {
+    // Import real database functions
+    const dbModule = await import('./src/database/db.js');
+    db = {
+      initializeDatabase: dbModule.initializeDatabase,
+      getUserByUsername: dbModule.getUserByUsername,
+      createUser: dbModule.createUser,
+      updateUserLogin: dbModule.updateUserLogin,
+      saveGameProgress: dbModule.saveGameProgress,
+      loadGameProgress: dbModule.loadGameProgress,
+      getAllUserProgress: dbModule.getAllUserProgress,
+      saveChatMessage: dbModule.saveChatMessage,
+      getChatHistory: dbModule.getChatHistory,
+      deleteChatHistory: dbModule.deleteChatHistory,
+      saveCharacterMemory: dbModule.saveCharacterMemory,
+      getCharacterMemories: dbModule.getCharacterMemories,
+      updateCharacterMemory: dbModule.updateCharacterMemory,
+      deleteCharacterMemory: dbModule.deleteCharacterMemory,
+      cleanupOldData: dbModule.cleanupOldData
+    };
+    
+    // Initialize the database
+    await db.initializeDatabase();
+    dbInitialized = true;
+    console.log('✅ Real database initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize real database:', error);
+    console.log('📝 Falling back to mock mode');
+    dbInitialized = false;
+  }
+}
 
-// Mock database functions
-db = {
-  initializeDatabase: async () => {
-    console.log('Mock: Database initialized');
-    return true;
-  },
-  getUserByUsername: async (username) => {
-    console.log(`Mock: Getting user ${username}`);
-    return {
-      id: 1,
-      username: username,
-      email: `${username}@example.com`,
-      created_at: new Date().toISOString()
-    };
-  },
-  createUser: async (username, email) => {
-    console.log(`Mock: Creating user ${username}`);
-    return {
-      id: Math.floor(Math.random() * 1000),
-      username: username,
-      email: email || `${username}@example.com`,
-      created_at: new Date().toISOString()
-    };
-  },
-  updateUserReputation: async (username, change) => {
-    console.log(`Mock: Updating reputation for ${username} by ${change}`);
-    return {
-      username: username,
-      reputation: Math.max(0, 100 + change)
-    };
-  },
-  updateUserLogin: async (username) => {
-    console.log(`Mock: Updating login for ${username}`);
-    return {
-      username: username,
-      last_login: new Date().toISOString(),
-      login_count: Math.floor(Math.random() * 50) + 1
-    };
-  },
-  saveGameState: async (username, gameState) => {
-    console.log(`Mock: Saving game state for ${username}`);
-    return { success: true };
-  },
-  getGameState: async (username) => {
-     console.log(`Mock: Getting game state for ${username}`);
-     return {
-       username: username,
-       current_character: null,
-       conversation_history: [],
-       game_progress: {},
-       last_updated: new Date().toISOString()
-     };
-   },
-   saveGameProgress: async (userId, character, progress) => {
-     console.log(`Mock: Saving progress for user ${userId}, character ${character}`);
-     return { success: true, userId, character, progress };
-   },
-   loadGameProgress: async (userId, character) => {
-     console.log(`Mock: Loading progress for user ${userId}, character ${character}`);
-     return {
-       userId: userId,
-       character: character,
-       progress: {
-         level: 1,
-         affection: 50,
-         conversations: 0
-       }
-     };
-   },
-   getAllUserProgress: async (userId) => {
-     console.log(`Mock: Loading all progress for user ${userId}`);
-     return {
-       userId: userId,
-       characters: {
-         rick: { level: 1, affection: 50, conversations: 0 },
-         morty: { level: 1, affection: 50, conversations: 0 }
-       }
-     };
-   }
- };
+// If no DATABASE_URL or database initialization failed, use mock mode
+if (!dbInitialized) {
+  console.log('📝 Using mock database mode for testing');
+  dbInitialized = true;
+  
+  // Mock database functions
+  db = {
+    initializeDatabase: async () => {
+      console.log('Mock: Database initialized');
+      return true;
+    },
+    getUserByUsername: async (username) => {
+      console.log(`Mock: Getting user ${username}`);
+      return {
+        id: 1,
+        username: username,
+        email: `${username}@example.com`,
+        created_at: new Date().toISOString()
+      };
+    },
+    createUser: async (username, email) => {
+      console.log(`Mock: Creating user ${username}`);
+      return {
+        id: Math.floor(Math.random() * 1000),
+        username: username,
+        email: email || `${username}@example.com`,
+        created_at: new Date().toISOString()
+      };
+    },
+    updateUserLogin: async (userId) => {
+      console.log(`Mock: Updating login for user ${userId}`);
+      return {
+        userId: userId,
+        last_login: new Date().toISOString(),
+        login_count: Math.floor(Math.random() * 50) + 1
+      };
+    },
+    saveGameProgress: async (userId, character, progress) => {
+      console.log(`Mock: Saving progress for user ${userId}, character ${character}`);
+      return { success: true, userId, character, progress };
+    },
+    loadGameProgress: async (userId, character) => {
+      console.log(`Mock: Loading progress for user ${userId}, character ${character}`);
+      return {
+        userId: userId,
+        character: character,
+        progress: {
+          level: 1,
+          affection: 50,
+          conversations: 0
+        }
+      };
+    },
+    getAllUserProgress: async (userId) => {
+      console.log(`Mock: Loading all progress for user ${userId}`);
+      return {
+        userId: userId,
+        characters: {
+          rick: { level: 1, affection: 50, conversations: 0 },
+          morty: { level: 1, affection: 50, conversations: 0 }
+        }
+      };
+    },
+    saveChatMessage: async (userId, character, userInput, characterResponse, emotion) => {
+      console.log(`Mock: Saving chat message for user ${userId}, character ${character}`);
+      return { success: true };
+    },
+    getChatHistory: async (userId, character, limit) => {
+      console.log(`Mock: Getting chat history for user ${userId}, character ${character}`);
+      return [];
+    },
+    deleteChatHistory: async (userId, character) => {
+      console.log(`Mock: Deleting chat history for user ${userId}, character ${character}`);
+      return { success: true };
+    },
+    saveCharacterMemory: async (userId, character, memoryType, memoryContent, importanceScore) => {
+      console.log(`Mock: Saving character memory for user ${userId}, character ${character}`);
+      return { success: true };
+    },
+    getCharacterMemories: async (userId, character, limit) => {
+      console.log(`Mock: Getting character memories for user ${userId}, character ${character}`);
+      return [];
+    },
+    updateCharacterMemory: async (memoryId, memoryContent, importanceScore) => {
+      console.log(`Mock: Updating character memory ${memoryId}`);
+      return { success: true };
+    },
+    deleteCharacterMemory: async (memoryId) => {
+      console.log(`Mock: Deleting character memory ${memoryId}`);
+      return { success: true };
+    },
+    cleanupOldData: async (daysToKeep) => {
+      console.log(`Mock: Cleaning up old data (${daysToKeep} days)`);
+      return { success: true };
+    }
+  };
+}
 
 
 
