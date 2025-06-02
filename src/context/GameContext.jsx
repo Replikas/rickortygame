@@ -110,34 +110,90 @@ export const GameProvider = ({ children }) => {
   const addToHistory = async (userInput, characterResponse, emotion) => {
     console.log('addToHistory called with:', { userInput, characterResponse, emotion })
     
-    const newEntry = {
-      userInput,
-      response: characterResponse,
-      emotion,
-      timestamp: new Date().toISOString()
-    }
-    
-    console.log('Adding entry to history:', newEntry)
-    setConversationHistory(prev => {
-      const newHistory = [...prev, newEntry]
-      console.log('New conversation history length:', newHistory.length)
-      return newHistory
-    })
-    setTotalInteractions(prev => prev + 1)
-    setMessagesSinceLastSave(prev => prev + 1)
-    setPendingProgressSave(true)
-    
-    // Save to database if user is logged in
-    if (selectedCharacter && currentUser) {
-      try {
-        // Save user message
-        if (userInput) {
+    // Handle individual messages (either user or character, not both)
+    if (userInput && !characterResponse) {
+      // Adding user message only
+      const userEntry = {
+        id: Date.now(),
+        sender: 'user',
+        content: userInput,
+        timestamp: new Date().toISOString()
+      }
+      
+      console.log('Adding user message to history:', userEntry)
+      setConversationHistory(prev => {
+        const newHistory = [...prev, userEntry]
+        console.log('New conversation history length:', newHistory.length)
+        return newHistory
+      })
+      
+      // Save to database if user is logged in
+      if (selectedCharacter && currentUser) {
+        try {
           await saveChatToHistory(selectedCharacter.id, userInput, true)
+        } catch (error) {
+          console.error('Error saving user message to database:', error)
         }
-        // Save character response
-        if (characterResponse) {
+      }
+    } else if (characterResponse && !userInput) {
+      // Adding character response only
+      const characterEntry = {
+        id: Date.now() + 1,
+        sender: 'character',
+        content: characterResponse,
+        emotion: emotion || 'neutral',
+        timestamp: new Date().toISOString()
+      }
+      
+      console.log('Adding character response to history:', characterEntry)
+      setConversationHistory(prev => {
+        const newHistory = [...prev, characterEntry]
+        console.log('New conversation history length:', newHistory.length)
+        return newHistory
+      })
+      
+      setTotalInteractions(prev => prev + 1)
+      setMessagesSinceLastSave(prev => prev + 1)
+      setPendingProgressSave(true)
+      
+      // Save to database if user is logged in
+      if (selectedCharacter && currentUser) {
+        try {
           await saveChatToHistory(selectedCharacter.id, characterResponse, false)
+        } catch (error) {
+          console.error('Error saving character response to database:', error)
         }
+      }
+    } else if (userInput && characterResponse) {
+      // Legacy: Adding both user and character messages (keep for backward compatibility)
+      const newEntry = {
+        userInput,
+        response: characterResponse,
+        emotion,
+        timestamp: new Date().toISOString()
+      }
+      
+      console.log('Adding legacy entry to history:', newEntry)
+      setConversationHistory(prev => {
+        const newHistory = [...prev, newEntry]
+        console.log('New conversation history length:', newHistory.length)
+        return newHistory
+      })
+      setTotalInteractions(prev => prev + 1)
+      setMessagesSinceLastSave(prev => prev + 1)
+      setPendingProgressSave(true)
+      
+      // Save to database if user is logged in
+      if (selectedCharacter && currentUser) {
+        try {
+          // Save user message
+          if (userInput) {
+            await saveChatToHistory(selectedCharacter.id, userInput, true)
+          }
+          // Save character response
+          if (characterResponse) {
+            await saveChatToHistory(selectedCharacter.id, characterResponse, false)
+          }
         
         // Check if we should save progress (every 10 messages)
         if (messagesSinceLastSave >= 9) { // 9 because we just incremented it
@@ -265,4 +321,4 @@ export const GameProvider = ({ children }) => {
       {children}
     </GameContext.Provider>
   )
-}
+}}
