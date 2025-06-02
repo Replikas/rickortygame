@@ -133,9 +133,9 @@ const GameScreen = () => {
           >
             <div className="portal-glow mx-auto w-32 h-32 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center mb-6">
               <div className="relative w-16 h-16 floating-portal">
-                <div className="portal-animation absolute inset-0 rounded-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-600"></div>
-                <div className="portal-inner absolute inset-2 rounded-full bg-gradient-to-r from-purple-600 via-blue-500 to-green-400"></div>
-              </div>
+                 <div className="portal-animation absolute inset-0 rounded-full"></div>
+                 <div className="portal-inner absolute inset-2 rounded-full"></div>
+               </div>
             </div>
             <h1 className="text-6xl font-bold portal-shadow-lg mb-4">
               <span className="rick-green">RICK</span>
@@ -161,8 +161,8 @@ const GameScreen = () => {
               whileTap={{ scale: 0.98 }}
             >
               <div className="inline-block mr-2 w-5 h-5 relative">
-                <div className="portal-animation absolute inset-0 rounded-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 animate-spin"></div>
-                <div className="portal-inner absolute inset-1 rounded-full bg-gradient-to-r from-purple-600 via-blue-500 to-green-400 animate-pulse"></div>
+                <div className="portal-animation absolute inset-0 rounded-full"></div>
+                <div className="portal-inner absolute inset-1 rounded-full"></div>
               </div>
               Start Adventure
             </motion.button>

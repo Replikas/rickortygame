@@ -239,38 +239,59 @@
     }
   }
   
-  @keyframes portal-spin {
+  @keyframes portal-swirl {
     0% {
       transform: rotate(0deg) scale(1);
-      opacity: 0.8;
+      border-radius: 50%;
+    }
+    25% {
+      transform: rotate(90deg) scale(1.05);
+      border-radius: 60% 40% 60% 40%;
     }
     50% {
       transform: rotate(180deg) scale(1.1);
-      opacity: 1;
+      border-radius: 40% 60% 40% 60%;
+    }
+    75% {
+      transform: rotate(270deg) scale(1.05);
+      border-radius: 60% 40% 60% 40%;
     }
     100% {
       transform: rotate(360deg) scale(1);
-      opacity: 0.8;
+      border-radius: 50%;
     }
   }
   
-  @keyframes portal-pulse {
+  @keyframes portal-core {
     0%, 100% {
-      transform: scale(0.8);
-      opacity: 0.6;
+      transform: scale(0.7) rotate(0deg);
+      opacity: 0.9;
     }
     50% {
-      transform: scale(1.2);
+      transform: scale(1) rotate(180deg);
       opacity: 1;
+    }
+  }
+  
+  @keyframes portal-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px #00ff41, inset 0 0 20px #00ff41;
+    }
+    50% {
+      box-shadow: 0 0 40px #00ff41, inset 0 0 30px #00ff41;
     }
   }
   
   .portal-animation {
-    animation: portal-spin 2s linear infinite;
+    background: radial-gradient(circle, #00ff41 0%, #00cc33 30%, #008822 60%, #004411 100%);
+    animation: portal-swirl 3s ease-in-out infinite, portal-glow 2s ease-in-out infinite;
+    border: 2px solid #00ff41;
   }
   
   .portal-inner {
-    animation: portal-pulse 1.5s ease-in-out infinite;
+    background: radial-gradient(circle, #66ff66 0%, #00ff41 50%, #00cc33 100%);
+    animation: portal-core 2s ease-in-out infinite reverse;
+    border: 1px solid #00ff41;
   }
   
   .rick-green {
