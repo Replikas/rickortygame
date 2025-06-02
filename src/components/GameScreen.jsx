@@ -735,6 +735,10 @@ const GameScreen = () => {
       timestamp: new Date()
     }
 
+    console.log('Sending message:', userMessage.content)
+    console.log('Selected character:', selectedCharacter?.id)
+    console.log('Is connected:', isConnected)
+
     setInput('')
     setIsTyping(true)
 

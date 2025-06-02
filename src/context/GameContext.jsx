@@ -29,6 +29,7 @@ export const GameProvider = ({ children }) => {
     saveProgress, 
     loadChatHistory, 
     saveChatToHistory, 
+    clearChatHistory,
     autoSave,
     loadMemories,
     saveMemory
@@ -107,6 +108,8 @@ export const GameProvider = ({ children }) => {
   }
 
   const addToHistory = async (userInput, characterResponse, emotion) => {
+    console.log('addToHistory called with:', { userInput, characterResponse, emotion })
+    
     const newEntry = {
       userInput,
       response: characterResponse,
@@ -114,7 +117,12 @@ export const GameProvider = ({ children }) => {
       timestamp: new Date().toISOString()
     }
     
-    setConversationHistory(prev => [...prev, newEntry])
+    console.log('Adding entry to history:', newEntry)
+    setConversationHistory(prev => {
+      const newHistory = [...prev, newEntry]
+      console.log('New conversation history length:', newHistory.length)
+      return newHistory
+    })
     setTotalInteractions(prev => prev + 1)
     setMessagesSinceLastSave(prev => prev + 1)
     setPendingProgressSave(true)
@@ -172,8 +180,17 @@ export const GameProvider = ({ children }) => {
     }
   }
 
-  const clearConversation = () => {
+  const clearConversation = async () => {
     setConversationHistory([])
+    
+    // Also clear from database if user is logged in
+    if (selectedCharacter && currentUser) {
+      try {
+        await clearChatHistory(selectedCharacter.id)
+      } catch (error) {
+        console.error('Failed to clear chat history from database:', error)
+      }
+    }
   }
 
   const resetCharacterProgress = async () => {
