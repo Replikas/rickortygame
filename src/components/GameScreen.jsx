@@ -358,42 +358,48 @@ const GameScreen = () => {
                       case 'happy':
                         return {
                           ...baseAnimation,
-                          y: [30, -5, 0],
-                          scale: [0.8, 1.05, 1],
-                          transition: { ...baseAnimation.transition, type: "spring", bounce: 0.4 }
+                          y: [30, -10, 0],
+                          scale: [0.8, 1.1, 1],
+                          rotate: [0, 3, 0],
+                          transition: { ...baseAnimation.transition, type: "spring", bounce: 0.5, duration: 1 }
                         }
                       case 'excited':
                         return {
                           ...baseAnimation,
-                          scale: [0.8, 1.1, 0.95, 1],
-                          rotate: [0, 2, -1, 0],
-                          transition: { ...baseAnimation.transition, duration: 0.8 }
+                          scale: [0.8, 1.15, 0.95, 1.05, 1],
+                          rotate: [0, 5, -3, 2, 0],
+                          y: [30, -8, 2, 0],
+                          transition: { ...baseAnimation.transition, duration: 1.2, type: "spring", bounce: 0.4 }
                         }
                       case 'angry':
                         return {
                           ...baseAnimation,
-                          x: [0, -3, 3, -2, 2, 0],
-                          transition: { ...baseAnimation.transition, duration: 0.6 }
+                          x: [0, -5, 5, -4, 4, -2, 2, 0],
+                          scale: [0.8, 1.05, 1],
+                          transition: { ...baseAnimation.transition, duration: 0.8 }
                         }
                       case 'sad':
                         return {
                           ...baseAnimation,
-                          y: [30, 5, 0],
-                          opacity: [0, 0.7, 1],
-                          transition: { ...baseAnimation.transition, duration: 1.2 }
+                          y: [30, 8, 0],
+                          opacity: [0, 0.6, 1],
+                          scale: [0.8, 0.95, 1],
+                          transition: { ...baseAnimation.transition, duration: 1.5, ease: "easeOut" }
                         }
                       case 'confused':
                         return {
                           ...baseAnimation,
-                          rotate: [0, -2, 2, -1, 1, 0],
-                          transition: { ...baseAnimation.transition, duration: 1 }
+                          rotate: [0, -5, 5, -3, 3, -1, 1, 0],
+                          scale: [0.8, 0.95, 1.02, 1],
+                          transition: { ...baseAnimation.transition, duration: 1.3 }
                         }
                       case 'flirty':
                         return {
                           ...baseAnimation,
-                          scale: [0.8, 1.02, 1],
-                          rotate: [0, -1, 1, 0],
-                          transition: { ...baseAnimation.transition, type: "spring", bounce: 0.3 }
+                          scale: [0.8, 1.08, 0.98, 1.03, 1],
+                          rotate: [0, -2, 2, -1, 0],
+                          y: [30, -3, 0],
+                          transition: { ...baseAnimation.transition, type: "spring", bounce: 0.4, duration: 1.1 }
                         }
                       default:
                         return baseAnimation
@@ -408,17 +414,17 @@ const GameScreen = () => {
                     whileHover={{ scale: 1.02 }}
                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-3`}
                   >
-                    <div className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm ${
+                    <div className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 ${
                       message.sender === 'user'
-                        ? 'bg-gradient-to-br from-portal-blue to-blue-600 text-white shadow-blue-500/25'
-                        : `bg-gradient-to-br from-gray-800/90 to-gray-900/90 text-portal-text border border-portal-blue/20 shadow-portal-blue/10 ${
-                            message.emotion === 'happy' ? 'border-yellow-400/30 shadow-yellow-400/20' :
-                            message.emotion === 'excited' ? 'border-orange-400/30 shadow-orange-400/20' :
-                            message.emotion === 'angry' ? 'border-red-400/30 shadow-red-400/20' :
-                            message.emotion === 'sad' ? 'border-blue-400/30 shadow-blue-400/20' :
-                            message.emotion === 'confused' ? 'border-purple-400/30 shadow-purple-400/20' :
-                            message.emotion === 'flirty' ? 'border-pink-400/30 shadow-pink-400/20' :
-                            'border-portal-blue/20 shadow-portal-blue/10'
+                        ? 'bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-blue-500/40 border-2 border-blue-400/50 ml-auto'
+                        : `bg-gradient-to-br from-gray-800/95 to-gray-900/95 text-portal-text border-2 shadow-lg mr-auto ${
+                            message.emotion === 'happy' ? 'border-yellow-400/60 shadow-yellow-400/30 bg-gradient-to-br from-yellow-900/20 to-gray-900/95' :
+                            message.emotion === 'excited' ? 'border-orange-400/60 shadow-orange-400/30 bg-gradient-to-br from-orange-900/20 to-gray-900/95' :
+                            message.emotion === 'angry' ? 'border-red-400/60 shadow-red-400/30 bg-gradient-to-br from-red-900/20 to-gray-900/95' :
+                            message.emotion === 'sad' ? 'border-blue-400/60 shadow-blue-400/30 bg-gradient-to-br from-blue-900/20 to-gray-900/95' :
+                            message.emotion === 'confused' ? 'border-purple-400/60 shadow-purple-400/30 bg-gradient-to-br from-purple-900/20 to-gray-900/95' :
+                            message.emotion === 'flirty' ? 'border-pink-400/60 shadow-pink-400/30 bg-gradient-to-br from-pink-900/20 to-gray-900/95' :
+                            'border-portal-blue/40 shadow-portal-blue/20'
                           }`
                     }`}>
                       <div className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: formatMessageToHTML(message.content) }} />
