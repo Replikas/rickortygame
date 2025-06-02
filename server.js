@@ -358,6 +358,28 @@ app.get('/api/memory/:userId/:character', async (req, res) => {
 
 
 
+// Add mobile-friendly headers and security
+app.use((req, res, next) => {
+  // Mobile viewport and compatibility headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Mobile-specific headers
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  
+  // Ensure proper MIME types for mobile
+  if (req.url.endsWith('.js')) {
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  } else if (req.url.endsWith('.css')) {
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  }
+  
+  next();
+});
+
 // Serve static files
 app.use(express.static(path.join(__dirname, 'dist')));
 
