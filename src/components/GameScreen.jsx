@@ -306,10 +306,7 @@ const GameScreen = () => {
                     <span className="text-white">{affectionLevel}%</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Conversations:</span>
-                  <span className="text-white">{conversationCount}</span>
-                </div>
+
               </div>
             </div>
           </div>
