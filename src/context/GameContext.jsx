@@ -20,6 +20,8 @@ export const GameProvider = ({ children }) => {
   const [selectedCharacter, setSelectedCharacter] = useState(null)
   const [currentScreen, setCurrentScreen] = useState('menu')
   const [isLoading, setIsLoading] = useState(false)
+  const [messagesSinceLastSave, setMessagesSinceLastSave] = useState(0)
+  const [pendingProgressSave, setPendingProgressSave] = useState(false)
   
   const { 
     currentUser, 
@@ -67,44 +69,41 @@ export const GameProvider = ({ children }) => {
     loadCharacterData()
   }, [selectedCharacter, currentUser, loadProgress, loadChatHistory])
 
-  // Auto-save progress periodically
+  // Auto-save progress periodically (only if there are pending changes)
   useEffect(() => {
-    if (!selectedCharacter || !currentUser) return
+    if (!selectedCharacter || !currentUser || !pendingProgressSave) return
 
-    const saveInterval = setInterval(() => {
-      autoSave(selectedCharacter.id, {
-        affectionLevel,
-        currentEmotion,
-        nsfwEnabled,
-        totalInteractions
-      })
-    }, 30000) // Save every 30 seconds
+    const saveInterval = setInterval(async () => {
+      if (pendingProgressSave) {
+        try {
+          await saveProgress(selectedCharacter.id, {
+            affectionLevel,
+            currentEmotion,
+            nsfwEnabled,
+            totalInteractions
+          })
+          setMessagesSinceLastSave(0)
+          setPendingProgressSave(false)
+        } catch (error) {
+          console.error('Auto-save failed:', error)
+        }
+      }
+    }, 60000) // Save every 60 seconds if there are pending changes
 
     return () => clearInterval(saveInterval)
-  }, [selectedCharacter, currentUser, affectionLevel, currentEmotion, nsfwEnabled, totalInteractions, autoSave])
+  }, [selectedCharacter, currentUser, affectionLevel, currentEmotion, nsfwEnabled, totalInteractions, pendingProgressSave, saveProgress])
 
   const selectCharacter = (character) => {
     setSelectedCharacter(character)
     setCurrentScreen('game')
+    setMessagesSinceLastSave(0)
+    setPendingProgressSave(false)
   }
 
   const updateAffection = async (amount) => {
     const newLevel = Math.max(0, Math.min(100, affectionLevel + amount))
     setAffectionLevel(newLevel)
-    
-    // Save progress immediately on affection change
-    if (selectedCharacter && currentUser) {
-      try {
-        await saveProgress(selectedCharacter, {
-          affectionLevel: newLevel,
-          currentEmotion,
-          nsfwEnabled,
-          totalInteractions
-        })
-      } catch (error) {
-        console.error('Failed to save progress:', error)
-      }
-    }
+    setPendingProgressSave(true)
   }
 
   const addToHistory = async (userInput, characterResponse, emotion) => {
@@ -117,6 +116,8 @@ export const GameProvider = ({ children }) => {
     
     setConversationHistory(prev => [...prev, newEntry])
     setTotalInteractions(prev => prev + 1)
+    setMessagesSinceLastSave(prev => prev + 1)
+    setPendingProgressSave(true)
     
     // Save to database if user is logged in
     if (selectedCharacter && currentUser) {
@@ -129,6 +130,18 @@ export const GameProvider = ({ children }) => {
         if (characterResponse) {
           await saveChatToHistory(selectedCharacter.id, characterResponse, false)
         }
+        
+        // Check if we should save progress (every 10 messages)
+        if (messagesSinceLastSave >= 9) { // 9 because we just incremented it
+          await saveProgress(selectedCharacter.id, {
+            affectionLevel,
+            currentEmotion: emotion,
+            nsfwEnabled,
+            totalInteractions: totalInteractions + 1
+          })
+          setMessagesSinceLastSave(0)
+          setPendingProgressSave(false)
+        }
       } catch (error) {
         console.error('Failed to save chat:', error)
       }
@@ -137,19 +150,20 @@ export const GameProvider = ({ children }) => {
 
   const setEmotion = (emotion) => {
     setCurrentEmotion(emotion)
+    setPendingProgressSave(true)
   }
 
   const toggleNSFW = async () => {
-    const newNsfwState = !nsfwEnabled
-    setNsfwEnabled(newNsfwState)
+    const newNsfwEnabled = !nsfwEnabled
+    setNsfwEnabled(newNsfwEnabled)
     
-    // Save immediately
+    // Save progress when NSFW setting changes
     if (selectedCharacter && currentUser) {
       try {
-        await saveProgress(selectedCharacter, {
+        await saveProgress(selectedCharacter.id, {
           affectionLevel,
           currentEmotion,
-          nsfwEnabled: newNsfwState,
+          nsfwEnabled: newNsfwEnabled,
           totalInteractions
         })
       } catch (error) {
@@ -167,11 +181,13 @@ export const GameProvider = ({ children }) => {
     setCurrentEmotion('neutral')
     setTotalInteractions(0)
     setConversationHistory([])
+    setMessagesSinceLastSave(0)
+    setPendingProgressSave(false)
     
-    // Save reset state
+    // Save reset state immediately (important state change)
     if (selectedCharacter && currentUser) {
       try {
-        await saveProgress(selectedCharacter, {
+        await saveProgress(selectedCharacter.id, {
           affectionLevel: 0,
           currentEmotion: 'neutral',
           nsfwEnabled,
