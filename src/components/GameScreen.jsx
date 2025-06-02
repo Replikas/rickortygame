@@ -13,7 +13,7 @@ import {
   Trash2,
   Zap
 } from 'lucide-react'
-import portalGif from '../assets/portal.gif'
+// Removed portal GIF import - using CSS animation instead
 import { useGame } from '../context/GameContext'
 import { useDatabase } from '../context/DatabaseContext'
 import { useOpenRouter } from '../context/OpenRouterContext'
@@ -162,7 +162,10 @@ const GameScreen = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <img src={portalGif} alt="Portal" className="inline mr-2 w-5 h-5" />
+              <div className="inline-block mr-2 w-5 h-5 relative">
+                <div className="portal-animation absolute inset-0 rounded-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 animate-spin"></div>
+                <div className="portal-inner absolute inset-1 rounded-full bg-gradient-to-r from-purple-600 via-blue-500 to-green-400 animate-pulse"></div>
+              </div>
               Start Adventure
             </motion.button>
 
