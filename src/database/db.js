@@ -116,6 +116,21 @@ export const saveGameProgress = async (userId, character, progressData) => {
   try {
     const { affectionLevel, currentEmotion, nsfwEnabled, totalInteractions } = progressData;
     
+    // Validate field lengths to prevent varchar(50) constraint violations
+    if (typeof character !== 'string' || character.length > 50) {
+      throw new Error(`Character field too long: ${character} (${character?.length} chars)`);
+    }
+    
+    if (typeof currentEmotion !== 'string' || currentEmotion.length > 50) {
+      throw new Error(`Current emotion field too long: ${currentEmotion} (${currentEmotion?.length} chars)`);
+    }
+    
+    // Truncate emotion if it's too long (fallback safety)
+    const safeEmotion = currentEmotion ? currentEmotion.substring(0, 50) : 'neutral';
+    const safeCharacter = character ? character.substring(0, 50) : 'unknown';
+    
+    console.log('Saving progress:', { userId, character: safeCharacter, emotion: safeEmotion, affectionLevel, nsfwEnabled, totalInteractions });
+    
     const result = await pool.query(`
       INSERT INTO game_progress (user_id, character, affection_level, current_emotion, nsfw_enabled, total_interactions, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
@@ -127,7 +142,7 @@ export const saveGameProgress = async (userId, character, progressData) => {
         total_interactions = EXCLUDED.total_interactions,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
-    `, [userId, character, affectionLevel, currentEmotion, nsfwEnabled, totalInteractions]);
+    `, [userId, safeCharacter, affectionLevel, safeEmotion, nsfwEnabled, totalInteractions]);
     
     return result.rows[0];
   } catch (error) {
@@ -162,11 +177,26 @@ export const getAllUserProgress = async (userId) => {
 // Chat history functions
 export const saveChatMessage = async (userId, character, userInput, characterResponse, emotion) => {
   try {
+    // Validate field lengths to prevent varchar(50) constraint violations
+    if (typeof character !== 'string' || character.length > 50) {
+      throw new Error(`Character field too long: ${character} (${character?.length} chars)`);
+    }
+    
+    if (typeof emotion !== 'string' || emotion.length > 50) {
+      throw new Error(`Emotion field too long: ${emotion} (${emotion?.length} chars)`);
+    }
+    
+    // Truncate fields if they're too long (fallback safety)
+    const safeEmotion = emotion ? emotion.substring(0, 50) : 'neutral';
+    const safeCharacter = character ? character.substring(0, 50) : 'unknown';
+    
+    console.log('Saving chat message:', { userId, character: safeCharacter, emotion: safeEmotion });
+    
     const result = await pool.query(`
       INSERT INTO chat_history (user_id, character, user_input, character_response, emotion)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
-    `, [userId, character, userInput, characterResponse, emotion]);
+    `, [userId, safeCharacter, userInput, characterResponse, safeEmotion]);
     
     return result.rows[0];
   } catch (error) {
@@ -203,11 +233,26 @@ export const deleteChatHistory = async (userId, character) => {
 // Character memory functions
 export const saveCharacterMemory = async (userId, character, memoryType, memoryContent, importanceScore = 1) => {
   try {
+    // Validate field lengths to prevent varchar(50) constraint violations
+    if (typeof character !== 'string' || character.length > 50) {
+      throw new Error(`Character field too long: ${character} (${character?.length} chars)`);
+    }
+    
+    if (typeof memoryType !== 'string' || memoryType.length > 50) {
+      throw new Error(`Memory type field too long: ${memoryType} (${memoryType?.length} chars)`);
+    }
+    
+    // Truncate fields if they're too long (fallback safety)
+    const safeCharacter = character ? character.substring(0, 50) : 'unknown';
+    const safeMemoryType = memoryType ? memoryType.substring(0, 50) : 'general';
+    
+    console.log('Saving character memory:', { userId, character: safeCharacter, memoryType: safeMemoryType });
+    
     const result = await pool.query(`
       INSERT INTO character_memories (user_id, character, memory_type, memory_content, importance_score)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
-    `, [userId, character, memoryType, memoryContent, importanceScore]);
+    `, [userId, safeCharacter, safeMemoryType, memoryContent, importanceScore]);
     
     return result.rows[0];
   } catch (error) {
