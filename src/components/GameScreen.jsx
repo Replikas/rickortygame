@@ -10,7 +10,7 @@ import DialogueBox from './DialogueBox'
 import AffectionMeter from './AffectionMeter'
 import Settings from './Settings'
 import ChoiceButtons from './ChoiceButtons'
-import { generateResponse } from '../services/openRouterService'
+import openRouterService from '../services/openRouterService'
 
 const GameScreen = () => {
   const {
@@ -505,7 +505,7 @@ const GameScreen = () => {
         // Add AI response to history for disconnected state
         addToHistory('', aiResponse, 'confused')
       } else {
-        const response = await generateResponse(input.trim(), selectedCharacter, conversationHistory)
+        const response = await openRouterService.generateResponse(input.trim(), selectedCharacter, conversationHistory)
         
         // Handle both old string format and new object format for backward compatibility
         if (typeof response === 'object' && response.text) {
