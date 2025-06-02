@@ -201,11 +201,11 @@ class OpenRouterService {
 
   analyzeEmotion(text, characterId) {
     const emotionKeywords = {
-      happy: ['haha', 'great', 'awesome', 'love', 'perfect', 'excellent', 'wonderful', 'amazing', 'fantastic', 'brilliant', 'good', 'yes!', 'yeah!', 'woo', 'nice'],
-      excited: ['wow', 'incredible', 'unbelievable', 'adventure', 'portal', 'dimension', 'science', 'experiment', 'discovery', 'breakthrough', 'genius', '!', 'omg', 'holy'],
+      happy: ['haha', 'great', 'awesome', 'love', 'perfect', 'excellent', 'wonderful', 'amazing', 'fantastic', 'brilliant', 'good', 'yes\\!', 'yeah\\!', 'woo', 'nice'],
+      excited: ['wow', 'incredible', 'unbelievable', 'adventure', 'portal', 'dimension', 'science', 'experiment', 'discovery', 'breakthrough', 'genius', '\\!', 'omg', 'holy'],
       angry: ['damn', 'shit', 'fuck', 'stupid', 'idiot', 'moron', 'hate', 'angry', 'pissed', 'annoying', 'irritating', 'dumb', 'pathetic', 'worthless'],
       sad: ['sorry', 'sad', 'depressed', 'lonely', 'hurt', 'pain', 'cry', 'tears', 'miss', 'lost', 'empty', 'broken', 'disappointed'],
-      confused: ['what', 'huh', 'confused', 'understand', 'explain', 'how', 'why', 'wait', 'hold on', 'unclear', 'lost', '\?\?\?', 'wha-'],
+      confused: ['what', 'huh', 'confused', 'understand', 'explain', 'how', 'why', 'wait', 'hold on', 'unclear', 'lost', '\\?\\?\\?', 'wha-'],
       flirty: ['sexy', 'hot', 'beautiful', 'gorgeous', 'cute', 'attractive', 'kiss', 'touch', 'close', 'intimate', 'desire', 'want you', 'need you']
     }
 
