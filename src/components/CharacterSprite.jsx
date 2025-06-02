@@ -6,6 +6,8 @@ function CharacterSprite({ character, emotion = 'neutral', affectionLevel = 0, s
   const [currentEmotion, setCurrentEmotion] = useState(emotion)
   const [particles, setParticles] = useState([])
   const [isHovered, setIsHovered] = useState(false)
+  const [isEmotionChanging, setIsEmotionChanging] = useState(false)
+  const [emotionChangeEffect, setEmotionChangeEffect] = useState(null)
 
   // Character data with portal-themed descriptions
   const characterData = {
@@ -63,6 +65,37 @@ function CharacterSprite({ character, emotion = 'neutral', affectionLevel = 0, s
 
   const currentEmotionData = emotions[currentEmotion] || emotions.neutral
 
+  // Handle emotion changes with animations
+  useEffect(() => {
+    if (emotion !== currentEmotion) {
+      setIsEmotionChanging(true)
+      
+      // Determine animation type based on emotion
+      const emotionEffects = {
+        happy: 'bounce',
+        excited: 'pulse',
+        angry: 'shake',
+        sad: 'fade',
+        confused: 'wobble',
+        flirty: 'glow',
+        neutral: 'smooth'
+      }
+      
+      setEmotionChangeEffect(emotionEffects[emotion] || 'smooth')
+      
+      // Delay emotion change to show animation
+      setTimeout(() => {
+        setCurrentEmotion(emotion)
+        setIsEmotionChanging(false)
+        
+        // Clear effect after animation
+        setTimeout(() => {
+          setEmotionChangeEffect(null)
+        }, 1000)
+      }, 300)
+    }
+  }, [emotion, currentEmotion])
+
   // Generate floating particles
   useEffect(() => {
     const generateParticles = () => {
@@ -112,9 +145,27 @@ function CharacterSprite({ character, emotion = 'neutral', affectionLevel = 0, s
         onHoverEnd={() => setIsHovered(false)}
         animate={{
           scale: currentEmotionData.scale,
-          rotate: currentEmotionData.rotation
+          rotate: currentEmotionData.rotation,
+          // Emotion change animations
+          ...(emotionChangeEffect === 'bounce' && {
+            y: [0, -20, 0, -10, 0]
+          }),
+          ...(emotionChangeEffect === 'shake' && {
+            x: [0, -10, 10, -10, 10, 0]
+          }),
+          ...(emotionChangeEffect === 'wobble' && {
+            rotate: [0, -5, 5, -3, 3, 0]
+          }),
+          ...(emotionChangeEffect === 'pulse' && {
+            scale: [currentEmotionData.scale, currentEmotionData.scale * 1.2, currentEmotionData.scale]
+          })
         }}
-        transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+        transition={{
+          duration: emotionChangeEffect ? 0.8 : 0.5,
+          type: emotionChangeEffect === 'bounce' ? "spring" : "tween",
+          stiffness: 100,
+          times: emotionChangeEffect ? [0, 0.2, 0.4, 0.6, 0.8, 1] : undefined
+        }}
       >
         {/* Portal Background Effect */}
         <motion.div
@@ -125,10 +176,35 @@ function CharacterSprite({ character, emotion = 'neutral', affectionLevel = 0, s
           }}
           animate={{
             scale: [1, 1.2, 1],
-            opacity: [0.3, currentEmotionData.glow, 0.3]
+            opacity: [
+              0.3,
+              emotionChangeEffect === 'glow' ? 1 : currentEmotionData.glow,
+              emotionChangeEffect === 'fade' ? 0.1 : 0.3
+            ]
           }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          transition={{
+            duration: emotionChangeEffect ? 1.5 : 3,
+            repeat: emotionChangeEffect ? 1 : Infinity,
+            ease: "easeInOut"
+          }}
         />
+
+        {/* Emotion Change Burst Effect */}
+        <AnimatePresence>
+          {isEmotionChanging && (
+            <motion.div
+              className="absolute inset-0 rounded-full pointer-events-none"
+              style={{
+                background: `radial-gradient(circle, ${currentChar.color}40 0%, transparent 50%)`,
+                filter: 'blur(10px)'
+              }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 2, opacity: [0, 0.8, 0] }}
+              exit={{ scale: 3, opacity: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Floating Particles */}
         <AnimatePresence>

@@ -333,15 +333,15 @@ const GameScreen = () => {
                     id: `${index}-character`,
                     sender: 'character',
                     content: entry.response,
-                    timestamp: entry.timestamp
+                    timestamp: entry.timestamp,
+                    emotion: entry.emotion || 'neutral'
                   })
                 }
                 
-                return messages.map((message, msgIndex) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 30, scale: 0.8 }}
-                    animate={{ 
+                return messages.map((message, msgIndex) => {
+                  // Emotion-based animation variants
+                  const getEmotionAnimation = (emotion) => {
+                    const baseAnimation = {
                       opacity: 1, 
                       y: 0, 
                       scale: 1,
@@ -351,14 +351,74 @@ const GameScreen = () => {
                         damping: 30,
                         delay: msgIndex * 0.1
                       }
-                    }}
+                    }
+                    
+                    switch(emotion) {
+                      case 'happy':
+                        return {
+                          ...baseAnimation,
+                          y: [30, -5, 0],
+                          scale: [0.8, 1.05, 1],
+                          transition: { ...baseAnimation.transition, type: "spring", bounce: 0.4 }
+                        }
+                      case 'excited':
+                        return {
+                          ...baseAnimation,
+                          scale: [0.8, 1.1, 0.95, 1],
+                          rotate: [0, 2, -1, 0],
+                          transition: { ...baseAnimation.transition, duration: 0.8 }
+                        }
+                      case 'angry':
+                        return {
+                          ...baseAnimation,
+                          x: [0, -3, 3, -2, 2, 0],
+                          transition: { ...baseAnimation.transition, duration: 0.6 }
+                        }
+                      case 'sad':
+                        return {
+                          ...baseAnimation,
+                          y: [30, 5, 0],
+                          opacity: [0, 0.7, 1],
+                          transition: { ...baseAnimation.transition, duration: 1.2 }
+                        }
+                      case 'confused':
+                        return {
+                          ...baseAnimation,
+                          rotate: [0, -2, 2, -1, 1, 0],
+                          transition: { ...baseAnimation.transition, duration: 1 }
+                        }
+                      case 'flirty':
+                        return {
+                          ...baseAnimation,
+                          scale: [0.8, 1.02, 1],
+                          rotate: [0, -1, 1, 0],
+                          transition: { ...baseAnimation.transition, type: "spring", bounce: 0.3 }
+                        }
+                      default:
+                        return baseAnimation
+                    }
+                  }
+                  
+                  return (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 30, scale: 0.8 }}
+                    animate={getEmotionAnimation(message.emotion)}
                     whileHover={{ scale: 1.02 }}
                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-3`}
                   >
                     <div className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm ${
                       message.sender === 'user'
                         ? 'bg-gradient-to-br from-portal-blue to-blue-600 text-white shadow-blue-500/25'
-                        : 'bg-gradient-to-br from-gray-800/90 to-gray-900/90 text-portal-text border border-portal-blue/20 shadow-portal-blue/10'
+                        : `bg-gradient-to-br from-gray-800/90 to-gray-900/90 text-portal-text border border-portal-blue/20 shadow-portal-blue/10 ${
+                            message.emotion === 'happy' ? 'border-yellow-400/30 shadow-yellow-400/20' :
+                            message.emotion === 'excited' ? 'border-orange-400/30 shadow-orange-400/20' :
+                            message.emotion === 'angry' ? 'border-red-400/30 shadow-red-400/20' :
+                            message.emotion === 'sad' ? 'border-blue-400/30 shadow-blue-400/20' :
+                            message.emotion === 'confused' ? 'border-purple-400/30 shadow-purple-400/20' :
+                            message.emotion === 'flirty' ? 'border-pink-400/30 shadow-pink-400/20' :
+                            'border-portal-blue/20 shadow-portal-blue/10'
+                          }`
                     }`}>
                       <div className="text-sm leading-relaxed">
                         {formatMessage(message.content)}
@@ -368,7 +428,8 @@ const GameScreen = () => {
                       </div>
                     </div>
                   </motion.div>
-                ))
+                  )
+                })
               }).flat()}
               
               {(isTyping || isThrottling) && (
