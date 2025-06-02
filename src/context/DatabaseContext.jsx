@@ -15,7 +15,7 @@ export const useDatabase = () => {
 
 export const DatabaseProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -23,7 +23,7 @@ export const DatabaseProvider = ({ children }) => {
   useEffect(() => {
     const init = async () => {
       try {
-        setIsLoading(true);
+        // setIsLoading(true); // Already initialized to true
         // Initialize database through API
         await fetch(`${API_BASE}/api/init`, { method: 'POST' });
         setIsInitialized(true);
