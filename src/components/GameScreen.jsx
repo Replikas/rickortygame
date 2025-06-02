@@ -628,21 +628,44 @@ const GameScreen = () => {
             aiResponse = `*${selectedCharacter.name} looks confused* Hey, it seems like there's no AI service configured. You'll need to set up an API key in the settings to chat with me properly!`
         }
       } else {
-        aiResponse = await generateResponse(input.trim(), selectedCharacter, conversationHistory)
+        const response = await generateResponse(input.trim(), selectedCharacter, conversationHistory)
+        
+        // Handle both old string format and new object format for backward compatibility
+        if (typeof response === 'object' && response.text) {
+          aiResponse = response.text
+          const detectedEmotion = response.emotion || 'neutral'
+          
+          // Update character emotion based on AI response
+           setEmotion(detectedEmotion)
+           
+           // Adjust affection based on emotion
+           const emotionAffectionMap = {
+             happy: 2,
+             excited: 3,
+             flirty: 4,
+             neutral: 0,
+             confused: -1,
+             sad: -2,
+             angry: -3
+           }
+           
+           const affectionChange = emotionAffectionMap[detectedEmotion] || 0
+           if (affectionChange !== 0) {
+             updateAffection(affectionChange)
+           }
+           
+           // Add to history with detected emotion
+           addToHistory(input.trim(), aiResponse, detectedEmotion)
+        } else {
+          // Fallback for old string format
+          aiResponse = response
+          addToHistory(input.trim(), aiResponse, 'neutral')
+        }
       }
-      
-      // Add AI response to history
-      const characterMessage = {
-        id: Date.now() + 1,
-        sender: 'character',
-        content: aiResponse,
-        timestamp: new Date(),
-        emotion: 'neutral' // You can enhance this to detect emotion from response
-      }
-      addToHistory(input.trim(), aiResponse, 'neutral')
     } catch (error) {
       console.error('Error generating response:', error)
       const errorMessage = "*glitches* Sorry, something went wrong with the interdimensional communication..."
+      setEmotion('confused')
       addToHistory(input.trim(), errorMessage, 'confused')
     } finally {
       setIsTyping(false)

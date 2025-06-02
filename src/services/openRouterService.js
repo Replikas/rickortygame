@@ -186,11 +186,69 @@ class OpenRouterService {
         throw new Error('Invalid response format from OpenRouter API')
       }
 
-      return data.choices[0].message.content.trim()
+      const responseText = data.choices[0].message.content.trim()
+      const detectedEmotion = this.analyzeEmotion(responseText, character.id)
+      
+      return {
+        text: responseText,
+        emotion: detectedEmotion
+      }
     } catch (error) {
       console.error('OpenRouter API Error:', error)
       throw error
     }
+  }
+
+  analyzeEmotion(text, characterId) {
+    const emotionKeywords = {
+      happy: ['haha', 'great', 'awesome', 'love', 'perfect', 'excellent', 'wonderful', 'amazing', 'fantastic', 'brilliant', 'good', 'yes!', 'yeah!', 'woo', 'nice'],
+      excited: ['wow', 'incredible', 'unbelievable', 'adventure', 'portal', 'dimension', 'science', 'experiment', 'discovery', 'breakthrough', 'genius', '!', 'omg', 'holy'],
+      angry: ['damn', 'shit', 'fuck', 'stupid', 'idiot', 'moron', 'hate', 'angry', 'pissed', 'annoying', 'irritating', 'dumb', 'pathetic', 'worthless'],
+      sad: ['sorry', 'sad', 'depressed', 'lonely', 'hurt', 'pain', 'cry', 'tears', 'miss', 'lost', 'empty', 'broken', 'disappointed'],
+      confused: ['what', 'huh', 'confused', 'understand', 'explain', 'how', 'why', 'wait', 'hold on', 'unclear', 'lost', '???', 'wha-'],
+      flirty: ['sexy', 'hot', 'beautiful', 'gorgeous', 'cute', 'attractive', 'kiss', 'touch', 'close', 'intimate', 'desire', 'want you', 'need you']
+    }
+
+    // Character-specific emotion tendencies
+    const characterEmotions = {
+      rick: ['angry', 'excited', 'confused'],
+      morty: ['confused', 'sad', 'excited'],
+      evil_morty: ['angry', 'flirty', 'confused'],
+      rick_prime: ['angry', 'flirty', 'excited']
+    }
+
+    const textLower = text.toLowerCase()
+    const emotionScores = {}
+
+    // Score emotions based on keyword matches
+    for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
+      emotionScores[emotion] = 0
+      for (const keyword of keywords) {
+        const matches = (textLower.match(new RegExp(keyword, 'g')) || []).length
+        emotionScores[emotion] += matches
+      }
+    }
+
+    // Boost character-specific emotions
+    const characterPrefs = characterEmotions[characterId] || ['neutral']
+    for (const emotion of characterPrefs) {
+      if (emotionScores[emotion] !== undefined) {
+        emotionScores[emotion] += 0.5
+      }
+    }
+
+    // Find highest scoring emotion
+    let maxEmotion = 'neutral'
+    let maxScore = 0
+    for (const [emotion, score] of Object.entries(emotionScores)) {
+      if (score > maxScore) {
+        maxScore = score
+        maxEmotion = emotion
+      }
+    }
+
+    // Return neutral if no strong emotion detected
+    return maxScore > 0 ? maxEmotion : 'neutral'
   }
 
   buildCharacterPrompt(character, userMessage) {
