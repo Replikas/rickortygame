@@ -313,8 +313,8 @@ const GameScreen = () => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 flex flex-col p-6">
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4 max-h-96">
+          <div className="flex-1 flex flex-col p-3 sm:p-6">
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4 max-h-96 sm:max-h-[500px]">
               {conversationHistory.map((entry, index) => {
                 const messages = []
                 
@@ -414,7 +414,7 @@ const GameScreen = () => {
                     whileHover={{ scale: 1.02 }}
                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-3`}
                   >
-                    <div className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 ${
+                    <div className={`max-w-[280px] sm:max-w-xs lg:max-w-md px-4 sm:px-5 py-3 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-300 ${
                       message.sender === 'user'
                         ? 'bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-blue-500/40 border-2 border-blue-400/50 ml-auto'
                         : `bg-gradient-to-br from-gray-800/95 to-gray-900/95 text-portal-text border-2 shadow-lg mr-auto ${
@@ -507,7 +507,7 @@ const GameScreen = () => {
 
             {/* Input Area */}
             <motion.div 
-              className="flex space-x-3 p-4 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-portal-blue/20"
+              className="flex space-x-2 sm:space-x-3 p-3 sm:p-4 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-portal-blue/20"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
@@ -518,14 +518,14 @@ const GameScreen = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && !isTyping && !isThrottling && handleSendMessage()}
                 placeholder={`Message ${selectedCharacter?.name}...`}
-                className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-sm px-2 py-3"
+                className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-sm sm:text-base px-2 py-3 min-w-0"
                 disabled={isTyping || isThrottling}
               />
               
               {/* Delete Chat Button */}
               <motion.button
                 onClick={clearConversation}
-                className="bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 p-3 rounded-xl shadow-lg transition-all duration-200"
+                className="bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 p-3 sm:p-3 rounded-xl shadow-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(220, 38, 38, 0.3)" }}
                 whileTap={{ scale: 0.95 }}
                 title="Clear conversation history"
@@ -536,7 +536,7 @@ const GameScreen = () => {
               <motion.button
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isTyping || isThrottling}
-                className="bg-gradient-to-r from-portal-blue to-blue-600 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="bg-gradient-to-r from-portal-blue to-blue-600 text-white p-3 sm:p-3 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(0, 255, 65, 0.3)" }}
                 whileTap={{ scale: 0.95 }}
                 animate={{
@@ -562,43 +562,7 @@ const GameScreen = () => {
     return images[characterId] || rickImg
   }
 
-  const formatMessage = (content) => {
-    const safeContent = typeof content === 'string' ? content : ''
-    
-    // Split by lines first
-    return safeContent.split('\n').map((line, lineIndex) => {
-      // Process formatting within each line - order matters!
-      let processedLine = line
-      
-      // First, handle bold text: **text** or __text__
-      processedLine = processedLine
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/__(.*?)__/g, '<strong>$1</strong>')
-      
-      // Then handle actions: *action* (single asterisks that aren't part of bold)
-      processedLine = processedLine
-        .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<span class="text-green-400 italic">*$1*</span>')
-      
-      // Then handle italic text: _text_ (single underscores that aren't part of bold)
-      processedLine = processedLine
-        .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="text-yellow-300">$1</em>')
-      
-      // Handle dialogue emphasis: "text"
-      processedLine = processedLine
-        .replace(/"([^"\n]+?)"/g, '<span class="text-blue-300 font-medium">"$1"</span>')
-      
-      // Handle thoughts: (text)
-      processedLine = processedLine
-        .replace(/\(([^)\n]+?)\)/g, '<span class="text-gray-400 italic">($1)</span>')
-      
-      return (
-        <span key={lineIndex}>
-          <span dangerouslySetInnerHTML={{ __html: processedLine }} />
-          {lineIndex < safeContent.split('\n').length - 1 && <br />}
-        </span>
-      )
-    })
-  }
+
 
   const formatMessageToHTML = (content) => {
     const safeContent = typeof content === 'string' ? content : ''
