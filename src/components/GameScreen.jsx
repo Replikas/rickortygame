@@ -572,24 +572,24 @@ const GameScreen = () => {
     
     // First, handle bold text: **text** or __text__
     processedContent = processedContent
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/__(.*?)__/g, '<strong>$1</strong>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: bold;">$1</strong>')
+      .replace(/__(.*?)__/g, '<strong style="font-weight: bold;">$1</strong>')
     
     // Then handle actions: *action* (single asterisks that aren't part of bold)
     processedContent = processedContent
-      .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<span class="text-green-400 italic">*$1*</span>')
+      .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<span style="color: #4ade80; font-style: italic;">*$1*</span>')
     
     // Then handle italic text: _text_ (single underscores that aren't part of bold)
     processedContent = processedContent
-      .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="text-yellow-300">$1</em>')
+      .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em style="color: #fde047; font-style: italic;">$1</em>')
     
     // Handle dialogue emphasis: "text"
     processedContent = processedContent
-      .replace(/"([^"\n]+?)"/g, '<span class="text-blue-300 font-medium">"$1"</span>')
+      .replace(/"([^"\n]+?)"/g, '<span style="color: #93c5fd; font-weight: 500;">"$1"</span>')
     
     // Handle thoughts: (text)
     processedContent = processedContent
-      .replace(/\(([^)\n]+?)\)/g, '<span class="text-gray-400 italic">($1)</span>')
+      .replace(/\(([^)\n]+?)\)/g, '<span style="color: #9ca3af; font-style: italic;">($1)</span>')
     
     // Handle line breaks
     processedContent = processedContent.replace(/\n/g, '<br />')
