@@ -10,7 +10,8 @@ import {
   MessageCircle,
   Atom,
   Brain,
-  Trash2
+  Trash2,
+  Zap
 } from 'lucide-react'
 import portalGif from '../assets/portal.gif'
 import { useGame } from '../context/GameContext'
@@ -161,7 +162,7 @@ const GameScreen = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Zap className="inline mr-2" size={20} />
+              <img src={portalGif} alt="Portal" className="inline mr-2 w-5 h-5" />
               Start Adventure
             </motion.button>
 
