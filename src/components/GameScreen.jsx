@@ -132,12 +132,10 @@ const GameScreen = () => {
             animate={{ opacity: 1, y: 0 }}
           >
             <div className="portal-glow mx-auto w-32 h-32 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center mb-6">
-              <img 
-                src={portalGif} 
-                alt="Portal" 
-                className="portal-text floating-portal" 
-                style={{width: '64px', height: '64px'}} 
-              />
+              <div className="relative w-16 h-16 floating-portal">
+                <div className="portal-animation absolute inset-0 rounded-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-600"></div>
+                <div className="portal-inner absolute inset-2 rounded-full bg-gradient-to-r from-purple-600 via-blue-500 to-green-400"></div>
+              </div>
             </div>
             <h1 className="text-6xl font-bold portal-shadow-lg mb-4">
               <span className="rick-green">RICK</span>
