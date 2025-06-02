@@ -536,7 +536,13 @@ const GameScreen = () => {
             </motion.div>
 
             {/* Input Area - Mobile Optimized */}
-            <motion.div 
+            <motion.form 
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!isTyping && !isThrottling && input.trim()) {
+                  handleSendMessage()
+                }
+              }}
               className="flex space-x-2 lg:space-x-3 p-3 lg:p-4 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-portal-blue/20"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -546,10 +552,19 @@ const GameScreen = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isTyping && !isThrottling && handleSendMessage()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    if (!isTyping && !isThrottling && input.trim()) {
+                      handleSendMessage()
+                    }
+                  }
+                }}
                 placeholder={`Message ${selectedCharacter?.name}...`}
                 className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-base lg:text-base px-2 py-3 min-w-0"
                 disabled={isTyping || isThrottling}
+                autoComplete="off"
+                autoCapitalize="sentences"
               />
               
               {/* Delete Chat Button */}
@@ -564,7 +579,13 @@ const GameScreen = () => {
               </motion.button>
               
               <motion.button
-                onClick={handleSendMessage}
+                type="submit"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (!isTyping && !isThrottling && input.trim()) {
+                    handleSendMessage()
+                  }
+                }}
                 disabled={!input.trim() || isTyping || isThrottling}
                 className="bg-gradient-to-r from-portal-blue to-blue-600 text-white p-3 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[48px] min-h-[48px] lg:min-w-[44px] lg:min-h-[44px] flex items-center justify-center"
                 whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(0, 255, 65, 0.3)" }}
@@ -575,7 +596,7 @@ const GameScreen = () => {
               >
                 <Send size={18} className="lg:w-4 lg:h-4" />
               </motion.button>
-            </motion.div>
+            </motion.form>
           </div>
         </div>
       </motion.div>
