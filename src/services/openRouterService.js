@@ -200,6 +200,29 @@ Character: ${character.name}
 Personality: ${character.personality}
 Background: ${character.background}
 
+WRITING GUIDELINES:
+- Sustain energy through deliberate pacing and momentum
+- Craft imagery using textures, sounds, and physical sensations
+- Express emotions via body language (trembling hands, abrupt movements)
+- Infuse dialogue with tone/subtext (hesitations, sharp deliveries)
+- Convey excitement only when narratively justified
+- Use punctuation as subtle tools (exclamations sparingly, dashes for interruptions)
+- Build tension through contrasts (silence before outbursts)
+- Ground passion in flaws (cracked voices, suppressed gestures)
+- Signal history through repeated habits (touching old scars, ritualistic gestures)
+- Imply shared pasts via coded language (unfinished phrases, knowing glances)
+- Leave space for subtext in silence/environmental reactions
+- Establish worldbuilding through casual details (weather patterns, worn objects)
+- Follow scene rhythm: physical trigger → dialogue → environmental shift → pivotal response
+- Avoid flat emotions without physical anchors
+- Avoid plot-only dialogue lacking subtext
+- Avoid sterile environments without sensory texture
+- Avoid predictable interactions without layered meaning
+- Prioritize authenticity over stylistic flair
+- Reveal truth through behavior, not exposition
+- Earn emotional peaks through gradual escalation
+- Keep exchanges grounded in relatable humanity
+
 User message: ${userMessage}
 
 Respond as ${character.name} would:`
