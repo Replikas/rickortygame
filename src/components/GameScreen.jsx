@@ -421,9 +421,7 @@ const GameScreen = () => {
                             'border-portal-blue/20 shadow-portal-blue/10'
                           }`
                     }`}>
-                      <div className="text-sm leading-relaxed">
-                        {formatMessage(message.content)}
-                      </div>
+                      <div className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: formatMessageToHTML(message.content) }} />
                       <div className="text-xs opacity-60 mt-2 text-right">
                         {new Date(message.timestamp).toLocaleTimeString()}
                       </div>
@@ -594,6 +592,39 @@ const GameScreen = () => {
         </span>
       )
     })
+  }
+
+  const formatMessageToHTML = (content) => {
+    const safeContent = typeof content === 'string' ? content : ''
+    
+    // Process formatting within the content - order matters!
+    let processedContent = safeContent
+    
+    // First, handle bold text: **text** or __text__
+    processedContent = processedContent
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/__(.*?)__/g, '<strong>$1</strong>')
+    
+    // Then handle actions: *action* (single asterisks that aren't part of bold)
+    processedContent = processedContent
+      .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<span class="text-green-400 italic">*$1*</span>')
+    
+    // Then handle italic text: _text_ (single underscores that aren't part of bold)
+    processedContent = processedContent
+      .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="text-yellow-300">$1</em>')
+    
+    // Handle dialogue emphasis: "text"
+    processedContent = processedContent
+      .replace(/"([^"\n]+?)"/g, '<span class="text-blue-300 font-medium">"$1"</span>')
+    
+    // Handle thoughts: (text)
+    processedContent = processedContent
+      .replace(/\(([^)\n]+?)\)/g, '<span class="text-gray-400 italic">($1)</span>')
+    
+    // Handle line breaks
+    processedContent = processedContent.replace(/\n/g, '<br />')
+    
+    return processedContent
   }
 
   const getEmotionColor = (emotion) => {
