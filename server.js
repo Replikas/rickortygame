@@ -11,43 +11,45 @@ const __dirname = dirname(__filename);
 let db = {};
 let dbInitialized = false;
 
-// Check if DATABASE_URL is available for real database
-if (process.env.DATABASE_URL) {
-  console.log('🗄️ Database URL found - enabling real database functionality');
-  try {
-    // Import real database functions
-    const dbModule = await import('./src/database/db.js');
-    db = {
-      initializeDatabase: dbModule.initializeDatabase,
-      getUserByUsername: dbModule.getUserByUsername,
-      createUser: dbModule.createUser,
-      updateUserLogin: dbModule.updateUserLogin,
-      saveGameProgress: dbModule.saveGameProgress,
-      loadGameProgress: dbModule.loadGameProgress,
-      getAllUserProgress: dbModule.getAllUserProgress,
-      saveChatMessage: dbModule.saveChatMessage,
-      getChatHistory: dbModule.getChatHistory,
-      deleteChatHistory: dbModule.deleteChatHistory,
-      saveCharacterMemory: dbModule.saveCharacterMemory,
-      getCharacterMemories: dbModule.getCharacterMemories,
-      updateCharacterMemory: dbModule.updateCharacterMemory,
-      deleteCharacterMemory: dbModule.deleteCharacterMemory,
-      cleanupOldData: dbModule.cleanupOldData
-    };
-    
-    // Initialize the database
-    await db.initializeDatabase();
-    dbInitialized = true;
-    console.log('✅ Real database initialized successfully');
-  } catch (error) {
-    console.error('❌ Failed to initialize real database:', error);
-    console.log('📝 Falling back to mock mode');
-    dbInitialized = false;
+// Initialize database function
+async function initializeDatabase() {
+  // Check if DATABASE_URL is available for real database
+  if (process.env.DATABASE_URL) {
+    console.log('🗄️ Database URL found - enabling real database functionality');
+    try {
+      // Import real database functions
+      const dbModule = await import('./src/database/db.js');
+      db = {
+        initializeDatabase: dbModule.initializeDatabase,
+        getUserByUsername: dbModule.getUserByUsername,
+        createUser: dbModule.createUser,
+        updateUserLogin: dbModule.updateUserLogin,
+        saveGameProgress: dbModule.saveGameProgress,
+        loadGameProgress: dbModule.loadGameProgress,
+        getAllUserProgress: dbModule.getAllUserProgress,
+        saveChatMessage: dbModule.saveChatMessage,
+        getChatHistory: dbModule.getChatHistory,
+        deleteChatHistory: dbModule.deleteChatHistory,
+        saveCharacterMemory: dbModule.saveCharacterMemory,
+        getCharacterMemories: dbModule.getCharacterMemories,
+        updateCharacterMemory: dbModule.updateCharacterMemory,
+        deleteCharacterMemory: dbModule.deleteCharacterMemory,
+        cleanupOldData: dbModule.cleanupOldData
+      };
+      
+      // Initialize the real database
+      await dbModule.initializeDatabase();
+      dbInitialized = true;
+      console.log('✅ Real database initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize real database:', error);
+      console.log('📝 Falling back to mock mode');
+      dbInitialized = false;
+    }
   }
-}
 
-// If no DATABASE_URL or database initialization failed, use mock mode
-if (!dbInitialized) {
+  // If no DATABASE_URL or database initialization failed, use mock mode
+  if (!dbInitialized) {
   console.log('📝 Using mock database mode for testing');
   dbInitialized = true;
   
@@ -144,34 +146,43 @@ if (!dbInitialized) {
   };
 }
 
-
+}
 
 // Add global error handlers
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
-  // Don't exit the process
+  console.error('Stack trace:', error.stack);
+  // Don't exit the process immediately, log and continue
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Don't exit the process
+  if (reason && reason.stack) {
+    console.error('Stack trace:', reason.stack);
+  }
+  // Don't exit the process immediately, log and continue
+});
+
+process.on('warning', (warning) => {
+  console.warn('Node.js Warning:', warning.name, warning.message);
+  if (warning.stack) {
+    console.warn('Warning stack:', warning.stack);
+  }
 });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  next();
+});
+
 // Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    console.error('JSON parsing error:', err);
-    return res.status(400).json({ error: 'Invalid JSON' });
-  }
-  next(err);
-});
 
 // API Routes
 
@@ -181,11 +192,11 @@ app.post('/api/init', async (req, res) => {
     if (!dbInitialized) {
       return res.status(503).json({ error: 'Database module not yet loaded' });
     }
-    await db.initializeDatabase();
-    res.json({ success: true });
+    // Database is already initialized during server startup
+    res.json({ success: true, message: 'Database already initialized' });
   } catch (error) {
-    console.error('Database initialization failed:', error);
-    res.status(500).json({ error: 'Failed to initialize database' });
+    console.error('Database initialization check failed:', error);
+    res.status(500).json({ error: 'Failed to check database status' });
   }
 });
 
@@ -388,6 +399,44 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Error handling middleware (must be after all routes)
+app.use((err, req, res, next) => {
+  console.error('Express error:', err);
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error('JSON parsing error:', err);
+    return res.status(400).json({ error: 'Invalid JSON' });
+  }
+  res.status(500).json({ error: 'Internal server error' });
 });
+
+// Initialize database and start server
+async function startServer() {
+  try {
+    console.log('Starting server initialization...');
+    await initializeDatabase();
+    console.log('Database initialization completed');
+    
+    const server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log('Server startup completed successfully');
+    });
+    
+    server.on('error', (error) => {
+      console.error('Server error:', error);
+      if (error.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use`);
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error in startServer function:', error);
+    throw error;
+  }
+}
+
+startServer().catch(error => {
+  console.error('Failed to start server:', error);
+  console.error('Stack trace:', error.stack);
+  process.exit(1);
+});
+

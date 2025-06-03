@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// API base URL - will use server endpoints instead of direct database access
-const API_BASE = window.location.origin;
+// API base URL - empty string to use Vite proxy in development
+const API_BASE = '';
 
 const DatabaseContext = createContext();
 
@@ -18,36 +18,52 @@ export const DatabaseProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [initAttempted, setInitAttempted] = useState(false);
 
   // Initialize database on app start
   useEffect(() => {
-    const init = async () => {
+    console.log('DatabaseContext useEffect triggered');
+    
+    if (initAttempted) {
+      console.log('Init already attempted, skipping');
+      return;
+    }
+    
+    console.log('Starting database initialization');
+    setInitAttempted(true);
+    
+    // Simplified initialization - just check localStorage and set loading to false
+    const init = () => {
+      console.log('Init function called - simplified version');
+      
       try {
-        // setIsLoading(true); // Already initialized to true
-        // Initialize database through API
-        await fetch(`${API_BASE}/api/init`, { method: 'POST' });
-        setIsInitialized(true);
-        
         // Check for saved user in localStorage
         const savedUsername = localStorage.getItem('rickmorty_username');
+        console.log('Saved username from localStorage:', savedUsername);
+        
         if (savedUsername) {
-          const response = await fetch(`${API_BASE}/api/users/${savedUsername}`);
-          if (response.ok) {
-            const user = await response.json();
-            setCurrentUser(user);
-            await fetch(`${API_BASE}/api/users/${user.id}/login`, { method: 'POST' });
-          } else {
-            localStorage.removeItem('rickmorty_username');
-          }
+          // Create offline user
+          const offlineUser = {
+            id: 1,
+            username: savedUsername,
+            email: `${savedUsername}@example.com`,
+            created_at: new Date().toISOString()
+          };
+          console.log('Setting current user:', offlineUser);
+          setCurrentUser(offlineUser);
         }
+        
+        setIsInitialized(false); // Always offline mode for now
+        console.log('Initialization complete - setting loading to false');
       } catch (err) {
-        console.error('Database initialization failed:', err);
-        setError('Failed to initialize database');
+        console.error('Init error:', err);
       } finally {
         setIsLoading(false);
+        console.log('isLoading set to false');
       }
     };
-
+    
+    // Run init immediately (not async)
     init();
   }, []);
 
@@ -56,28 +72,68 @@ export const DatabaseProvider = ({ children }) => {
       setIsLoading(true);
       setError(null);
       
-      // Try to get existing user
-      let response = await fetch(`${API_BASE}/api/users/${username}`);
-      let user;
-      
-      if (!response.ok) {
-        // Create new user if doesn't exist
-        response = await fetch(`${API_BASE}/api/users`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username })
-        });
+      if (isInitialized) {
+        // Try API login if database is initialized
+        try {
+          // Try to get existing user
+          const getUserController = new AbortController();
+          const getUserTimeoutId = setTimeout(() => getUserController.abort(), 2000);
+          
+          let response = await fetch(`${API_BASE}/api/users/${username}`, {
+            signal: getUserController.signal
+          });
+          clearTimeout(getUserTimeoutId);
+          let user;
+          
+          if (!response.ok) {
+            // Create new user if doesn't exist
+            const createUserController = new AbortController();
+            const createUserTimeoutId = setTimeout(() => createUserController.abort(), 2000);
+            
+            response = await fetch(`${API_BASE}/api/users`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username }),
+              signal: createUserController.signal
+            });
+            clearTimeout(createUserTimeoutId);
+          }
+          
+          if (response.ok) {
+            user = await response.json();
+            
+            const loginController = new AbortController();
+            const loginTimeoutId = setTimeout(() => loginController.abort(), 2000);
+            
+            await fetch(`${API_BASE}/api/users/${user.id}/login`, { 
+              method: 'POST',
+              signal: loginController.signal
+            });
+            clearTimeout(loginTimeoutId);
+            
+            setCurrentUser(user);
+            localStorage.setItem('rickmorty_username', username);
+            return { success: true, user };
+          }
+          
+          return { success: false, error: 'Failed to create or retrieve user' };
+        } catch (apiError) {
+          console.warn('API login failed, falling back to offline mode:', apiError);
+          // Fall through to offline mode
+        }
       }
       
-      if (response.ok) {
-        user = await response.json();
-        await fetch(`${API_BASE}/api/users/${user.id}/login`, { method: 'POST' });
-        setCurrentUser(user);
-        localStorage.setItem('rickmorty_username', username);
-        return { success: true, user };
-      }
+      // Offline mode login - just use localStorage
+      const user = {
+        id: Math.floor(Math.random() * 1000) + 1,
+        username: username,
+        email: `${username}@example.com`,
+        created_at: new Date().toISOString()
+      };
       
-      return { success: false, error: 'Failed to create or retrieve user' };
+      setCurrentUser(user);
+      localStorage.setItem('rickmorty_username', username);
+      return { success: true, user };
     } catch (err) {
       console.error('Login failed:', err);
       setError('Login failed. Please try again.');
@@ -87,30 +143,61 @@ export const DatabaseProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('rickmorty_username');
+  const logout = async () => {
+    try {
+      if (currentUser && isInitialized) {
+        try {
+          await fetch(`${API_BASE}/api/users/${currentUser.id}/logout`, { method: 'POST' });
+        } catch (apiError) {
+          console.warn('API logout failed, continuing with local logout:', apiError);
+        }
+      }
+      setCurrentUser(null);
+      localStorage.removeItem('rickmorty_username');
+    } catch (err) {
+      console.error('Logout failed:', err);
+      // Still clear local state even if API call fails
+      setCurrentUser(null);
+      localStorage.removeItem('rickmorty_username');
+    }
   };
 
-  const saveProgress = async (character, progress) => {
+  const saveProgress = async (character, data) => {
     if (!currentUser) return;
     
-    try {
-      const response = await fetch(`${API_BASE}/api/progress`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUser.id,
-          character,
-          progress
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to save progress');
+    const progressData = {
+      user_id: currentUser.id,
+      character,
+      ...data,
+      saved_at: new Date().toISOString()
+    };
+    
+    if (isInitialized) {
+      try {
+        const response = await fetch(`${API_BASE}/api/progress`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(progressData)
+        });
+        
+        if (response.ok) {
+          // Also save to localStorage as backup
+          const storageKey = `progress_${currentUser.id}_${character}`;
+          localStorage.setItem(storageKey, JSON.stringify(progressData));
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to save progress to API:', err);
       }
+    }
+    
+    // Fallback to localStorage
+    try {
+      const storageKey = `progress_${currentUser.id}_${character}`;
+      localStorage.setItem(storageKey, JSON.stringify(progressData));
+      console.log('Progress saved to localStorage');
     } catch (err) {
-      console.error('Failed to save progress:', err);
+      console.error('Failed to save progress to localStorage:', err);
       setError('Failed to save progress');
     }
   };
@@ -118,14 +205,24 @@ export const DatabaseProvider = ({ children }) => {
   const loadProgress = async (character) => {
     if (!currentUser) return null;
     
-    try {
-      const response = await fetch(`${API_BASE}/api/progress/${currentUser.id}/${character}`);
-      if (response.ok) {
-        return await response.json();
+    if (isInitialized) {
+      try {
+        const response = await fetch(`${API_BASE}/api/progress/${currentUser.id}/${character}`);
+        if (response.ok) {
+          return await response.json();
+        }
+      } catch (err) {
+        console.error('Failed to load progress from API:', err);
       }
-      return null;
+    }
+    
+    // Fallback to localStorage
+    try {
+      const storageKey = `progress_${currentUser.id}_${character}`;
+      const stored = localStorage.getItem(storageKey);
+      return stored ? JSON.parse(stored) : null;
     } catch (err) {
-      console.error('Failed to load progress:', err);
+      console.error('Failed to load progress from localStorage:', err);
       return null;
     }
   };
@@ -133,14 +230,32 @@ export const DatabaseProvider = ({ children }) => {
   const getAllProgress = async () => {
     if (!currentUser) return [];
     
-    try {
-      const response = await fetch(`${API_BASE}/api/progress/${currentUser.id}`);
-      if (response.ok) {
-        return await response.json();
+    if (isInitialized) {
+      try {
+        const response = await fetch(`${API_BASE}/api/progress/${currentUser.id}`);
+        if (response.ok) {
+          return await response.json();
+        }
+      } catch (err) {
+        console.error('Failed to load all progress from API:', err);
       }
-      return [];
+    }
+    
+    // Fallback to localStorage
+    try {
+      const allProgress = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(`progress_${currentUser.id}_`)) {
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            allProgress.push(JSON.parse(stored));
+          }
+        }
+      }
+      return allProgress;
     } catch (err) {
-      console.error('Failed to load all progress:', err);
+      console.error('Failed to load all progress from localStorage:', err);
       return [];
     }
   };
@@ -182,49 +297,55 @@ export const DatabaseProvider = ({ children }) => {
       localStorage.setItem(storageKey, JSON.stringify(existingHistory));
     };
     
-    try {
-      const response = await fetch(`${API_BASE}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUser.id,
-          character,
-          message,
-          isUser
-        })
-      });
-      
-      // If database call fails, use localStorage
-      if (!response.ok) {
-        useLocalStorage();
+    if (isInitialized) {
+      try {
+        const response = await fetch(`${API_BASE}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUser.id,
+            character,
+            message,
+            isUser
+          })
+        });
+        
+        // If database call succeeds, also save to localStorage as backup
+        if (response.ok) {
+          useLocalStorage();
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to save chat message to API:', err);
       }
-    } catch (err) {
-      console.error('Failed to save chat message:', err);
-      // Use localStorage on any error
-      useLocalStorage();
     }
+    
+    // Use localStorage as fallback
+    useLocalStorage();
   };
 
   const loadChatHistory = async (character) => {
     if (!currentUser) return [];
     
-    try {
-      const response = await fetch(`${API_BASE}/api/chat/${currentUser.id}/${character}`);
-      if (response.ok) {
-        return await response.json();
+    if (isInitialized) {
+      try {
+        const response = await fetch(`${API_BASE}/api/chat/${currentUser.id}/${character}`);
+        if (response.ok) {
+          return await response.json();
+        }
+      } catch (err) {
+        console.error('Failed to load chat history from API:', err);
       }
-      
-      // If database is disabled, use localStorage as fallback
+    }
+    
+    // Fallback to localStorage
+    try {
       const storageKey = `chat_${currentUser.id}_${character}`;
       const localHistory = localStorage.getItem(storageKey);
       return localHistory ? JSON.parse(localHistory) : [];
     } catch (err) {
-      console.error('Failed to load chat history:', err);
-      
-      // Fallback to localStorage
-      const storageKey = `chat_${currentUser.id}_${character}`;
-      const localHistory = localStorage.getItem(storageKey);
-      return localHistory ? JSON.parse(localHistory) : [];
+      console.error('Failed to load chat history from localStorage:', err);
+      return [];
     }
   };
 
@@ -283,6 +404,46 @@ export const DatabaseProvider = ({ children }) => {
     }
   };
 
+  const saveGameData = async (gameData) => {
+    if (!currentUser) {
+      throw new Error('No user logged in');
+    }
+
+    try {
+      if (isInitialized) {
+        // Try to save to API if database is initialized
+        try {
+          const response = await fetch(`${API_BASE}/api/users/${currentUser.id}/game-data`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(gameData)
+          });
+
+          if (response.ok) {
+            return await response.json();
+          }
+        } catch (apiError) {
+          console.warn('API save failed, falling back to localStorage:', apiError);
+        }
+      }
+      
+      // Offline mode - save to localStorage
+      const gameDataKey = `rickmorty_gamedata_${currentUser.username}`;
+      const savedData = {
+        ...gameData,
+        user_id: currentUser.id,
+        saved_at: new Date().toISOString()
+      };
+      
+      localStorage.setItem(gameDataKey, JSON.stringify(savedData));
+      console.log('Game data saved to localStorage');
+      return savedData;
+    } catch (err) {
+      console.error('Save game data failed:', err);
+      throw err;
+    }
+  };
+
   const value = {
     // State
     currentUser,
@@ -299,6 +460,7 @@ export const DatabaseProvider = ({ children }) => {
     loadProgress,
     getAllProgress,
     autoSave,
+    saveGameData,
     
     // Chat history
     saveChatToHistory,

@@ -58,26 +58,26 @@ function AppContent() {
       </div>
     )
   }
-
-  return (
-    <SettingsProvider>
-      <AudioProvider>
-        <OpenRouterProvider>
-          <GameProvider>
-            <GameStateProvider>
-            {shouldShowLogin ? (
-              <UserLogin onLoginSuccess={handleLoginSuccess} />
-            ) : (
-              <div className="min-h-screen bg-gradient-to-br from-green-900 via-blue-900 to-purple-900">
-                <GameScreen />
-              </div>
-            )}
-            </GameStateProvider>
-          </GameProvider>
-        </OpenRouterProvider>
-       </AudioProvider>
-     </SettingsProvider>
-  )
+  
+  if (shouldShowLogin) {
+    return <UserLogin onLoginSuccess={handleLoginSuccess} />;
+  } else {
+    return (
+      <SettingsProvider>
+        <AudioProvider>
+          <OpenRouterProvider>
+            <GameProvider>
+              <GameStateProvider>
+                <div className="min-h-screen bg-gradient-to-br from-green-900 via-blue-900 to-purple-900">
+                  <GameScreen />
+                </div>
+              </GameStateProvider>
+            </GameProvider>
+          </OpenRouterProvider>
+        </AudioProvider>
+      </SettingsProvider>
+    );
+  }
 }
 
 function App() {
